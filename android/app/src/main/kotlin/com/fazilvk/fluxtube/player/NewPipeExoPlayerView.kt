@@ -129,11 +129,20 @@ class NewPipeExoPlayerView(
     private val httpDataSourceFactory = DefaultHttpDataSource.Factory()
         .setUserAgent(USER_AGENT)
         .setAllowCrossProtocolRedirects(true)
+        .setConnectTimeoutMs(15_000)
+        .setReadTimeoutMs(15_000)
     private val dataSourceFactory: DataSource.Factory = CacheDataSource.Factory()
         .setCache(NewPipeSharedExoPlayer.cache(context))
         .setUpstreamDataSourceFactory(httpDataSourceFactory)
         .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+    private val liveDataSourceFactory: DataSource.Factory = DefaultHttpDataSource.Factory()
+        .setUserAgent(USER_AGENT)
+        .setAllowCrossProtocolRedirects(true)
+        .setConnectTimeoutMs(30_000)
+        .setReadTimeoutMs(30_000)
     private val mediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory)
+    private val liveHlsFactory = HlsMediaSource.Factory(liveDataSourceFactory)
+        .setAllowChunklessPreparation(true)
     private val player = NewPipeSharedExoPlayer.get(context)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val positionUpdateRunnable = object : Runnable {
@@ -165,13 +174,23 @@ class NewPipeExoPlayerView(
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            val errorCode = error.errorCodeName
+            val isPlaylistStuck = errorCode.contains("PlaylistStuck") ||
+                error.cause?.javaClass?.simpleName?.contains("PlaylistStuck") == true
             channel.invokeMethod(
                 "onError",
                 mapOf(
                     "message" to (error.message ?: "Playback error"),
-                    "code" to error.errorCodeName
+                    "code" to errorCode,
+                    "isPlaylistStuck" to isPlaylistStuck,
+                    "sourceType" to sourceType,
+                    "isLive" to isLive
                 )
             )
+            if (isPlaylistStuck && isLive) {
+                android.util.Log.w("NewPipeExoPlayer", "Live HLS playlist stuck, requesting URL refresh")
+                channel.invokeMethod("onLiveUrlExpired", mapOf<String, Any?>())
+            }
         }
     }
     private val playerView = PlayerView(context).apply {
@@ -293,8 +312,8 @@ class NewPipeExoPlayerView(
             "hls" -> {
                 val manifestUrl = params["manifestUrl"] as? String
                 if (manifestUrl.isNullOrBlank()) return
-                HlsMediaSource.Factory(dataSourceFactory)
-                    .createMediaSource(mediaItem(manifestUrl, params))
+                val factory = if (isLive) liveHlsFactory else HlsMediaSource.Factory(dataSourceFactory)
+                factory.createMediaSource(mediaItem(manifestUrl, params))
             }
             "merging" -> {
                 val videoUrl = params["videoUrl"] as? String

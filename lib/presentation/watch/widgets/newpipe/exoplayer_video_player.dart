@@ -19,6 +19,7 @@ import 'package:fluxtube/domain/watch/playback/models/playback_configuration.dar
 import 'package:fluxtube/domain/watch/playback/models/stream_quality_info.dart';
 import 'package:fluxtube/domain/watch/playback/newpipe_playback_resolver.dart';
 import 'package:fluxtube/domain/watch/playback/newpipe_stream_helper.dart';
+import 'package:fluxtube/infrastructure/newpipe/newpipe_channel.dart';
 import 'package:fluxtube/presentation/watch/widgets/player/player_settings_sheet.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -91,6 +92,7 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
   String? _currentCaptionText;
   String? _currentAudioTrackId;
   List<_CaptionCue> _captionCues = [];
+  bool _isReloadingLiveUrl = false;
   late PlaybackConfiguration _config;
   late List<StreamQualityInfo> _qualities;
   late List<AudioTrackInfo> _audioTracks;
@@ -231,6 +233,28 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
     return resolved;
   }
 
+  Future<void> _handleLiveUrlExpired() async {
+    if (_isReloadingLiveUrl) return;
+    _isReloadingLiveUrl = true;
+    try {
+      final freshInfo = await NewPipeChannel.getStreamInfo(widget.videoId);
+      final freshHlsUrl = freshInfo.hlsUrl;
+      if (freshHlsUrl != null && freshHlsUrl.isNotEmpty) {
+        _config = _config.copyWith(manifestUrl: freshHlsUrl);
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+            _isBuffering = true;
+          });
+          await _channel?.invokeMethod('load', _sourceParams(keepPosition: false));
+        }
+      }
+    } catch (_) {
+    } finally {
+      _isReloadingLiveUrl = false;
+    }
+  }
+
   Map<String, Object?> _sourceParams({
     bool keepPosition = false,
     int? startPositionMs,
@@ -322,10 +346,19 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
         case 'onError':
           final args = Map<String, dynamic>.from(call.arguments as Map);
           if (mounted) {
+            final isPlaylistStuck = args['isPlaylistStuck'] as bool? ?? false;
             setState(() {
               _errorMessage = args['message'] as String? ?? 'Playback failed';
               _isBuffering = false;
             });
+            if (isPlaylistStuck && _config.isLive) {
+              _handleLiveUrlExpired();
+            }
+          }
+          break;
+        case 'onLiveUrlExpired':
+          if (mounted && _config.isLive) {
+            _handleLiveUrlExpired();
           }
           break;
       }

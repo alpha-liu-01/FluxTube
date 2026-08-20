@@ -98,7 +98,7 @@ class HomeRecommendationImpl implements HomeRecommendationService {
         filter: '',
       );
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           log('Search failed for query: $query');
           return <NewPipeSearchItem>[];

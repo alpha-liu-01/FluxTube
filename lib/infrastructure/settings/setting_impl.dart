@@ -517,7 +517,7 @@ class SettingImpl implements SettingsService {
       {required String profileName}) async {
     try {
       final currentProfiles = await getProfiles();
-      return currentProfiles.fold(
+      return await currentProfiles.fold(
         (failure) => Left(failure),
         (profiles) async {
           if (profiles.contains(profileName)) {
@@ -546,7 +546,7 @@ class SettingImpl implements SettingsService {
             MainFailure.serverFailure()); // Cannot delete default profile
       }
       final currentProfiles = await getProfiles();
-      return currentProfiles.fold(
+      return await currentProfiles.fold(
         (failure) => Left(failure),
         (profiles) async {
           final newProfiles = profiles.where((p) => p != profileName).toList();
@@ -589,7 +589,7 @@ class SettingImpl implements SettingsService {
         return profiles;
       }
       final currentProfiles = await getProfiles();
-      return currentProfiles.fold(
+      return await currentProfiles.fold(
         (failure) => Left(failure),
         (profiles) async {
           if (!profiles.contains(oldName)) {

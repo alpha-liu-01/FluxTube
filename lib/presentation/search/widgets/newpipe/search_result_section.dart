@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/colors.dart';
@@ -101,7 +102,7 @@ class _NewPipeSearchResultSectionState
 
         return CustomScrollView(
           controller: _scrollController,
-          cacheExtent: 500,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           slivers: [
             // Shorts section (horizontal scrollable)
             if (shortItems.isNotEmpty)

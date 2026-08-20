@@ -14,6 +14,12 @@ analyzer:
     - "**/*.freezed.dart"
     - .dart_tool/**
     - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   errors:
     no_leading_underscores_for_local_identifiers: ignore
     avoid_empty_else: error

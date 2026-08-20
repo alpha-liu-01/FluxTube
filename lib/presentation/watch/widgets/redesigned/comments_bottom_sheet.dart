@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/watch/watch_bloc.dart';
 import 'package:fluxtube/core/animations/animations.dart';
@@ -312,7 +313,7 @@ class _CommentsListViewState extends State<_CommentsListView> {
         return ListView.builder(
           controller: widget.scrollController,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          cacheExtent: 500,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           itemCount: state.comments.comments.length + (isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (index < state.comments.comments.length) {
@@ -666,7 +667,7 @@ class _CommentRepliesSheetState extends State<_CommentRepliesSheet> {
                       controller: _scrollController,
                       padding:
                           const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                      cacheExtent: 500,
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
                       itemCount: state.commentReplies.comments.length + (isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index < state.commentReplies.comments.length) {

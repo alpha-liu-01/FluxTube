@@ -7,7 +7,7 @@ import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
-import 'package:fluxtube/core/player/playback_queue_controller.dart';
+import 'package:fluxtube/core/player/playback_queue.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/watch/widgets/explode/description_section.dart';
@@ -215,20 +215,19 @@ class _ExplodeScreenWatchState extends State<ExplodeScreenWatch>
         // This ensures PIP works when navigating from external links
         final watchInfo = state.explodeWatchResp;
         if (watchInfo.title.isNotEmpty) {
-          BlocProvider.of<WatchBloc>(context).add(
-            WatchEvent.setSelectedVideoBasicDetails(
-              details: VideoBasicInfo(
-                id: widget.id,
-                title: watchInfo.title,
-                thumbnailUrl: watchInfo.thumbnailUrl,
-                channelName: watchInfo.author,
-                channelId: watchInfo.channelId,
-              ),
-            ),
+          final currentInfo = VideoBasicInfo(
+            id: widget.id,
+            title: watchInfo.title,
+            thumbnailUrl: watchInfo.thumbnailUrl,
+            channelName: watchInfo.author,
+            channelId: watchInfo.channelId,
           );
-          PlaybackQueueController.instance.setQueue(
-            currentVideoId: widget.id,
-            videos: (state.relatedVideos ?? []).map((related) {
+          BlocProvider.of<WatchBloc>(context).add(
+            WatchEvent.setSelectedVideoBasicDetails(details: currentInfo),
+          );
+          PlaybackQueue().seedFromRelated(
+            current: currentInfo,
+            related: (state.relatedVideos ?? []).map((related) {
               return VideoBasicInfo(
                 id: related.id,
                 title: related.title,

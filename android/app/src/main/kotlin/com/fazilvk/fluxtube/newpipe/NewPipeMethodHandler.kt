@@ -473,6 +473,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)
@@ -525,6 +526,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)
@@ -575,6 +577,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)

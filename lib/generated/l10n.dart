@@ -18,8 +18,10 @@ class S {
   static S? _current;
 
   static S get current {
-    assert(_current != null,
-        'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.');
+    assert(
+      _current != null,
+      'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.',
+    );
     return _current!;
   }
 
@@ -41,8 +43,10 @@ class S {
 
   static S of(BuildContext context) {
     final instance = S.maybeOf(context);
-    assert(instance != null,
-        'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?');
+    assert(
+      instance != null,
+      'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?',
+    );
     return instance!;
   }
 
@@ -52,39 +56,34 @@ class S {
 
   /// `Home`
   String get home {
-    return Intl.message(
-      'Home',
-      name: 'home',
-      desc: 'Home label',
-      args: [],
-    );
+    return Intl.message('Home', name: 'home', desc: 'Home label', args: []);
   }
 
   /// `System`
   String get themeSystem {
-    return Intl.message(
-      'System',
-      name: 'themeSystem',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('System', name: 'themeSystem', desc: '', args: []);
   }
 
   /// `Light`
   String get themeLight {
-    return Intl.message(
-      'Light',
-      name: 'themeLight',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Light', name: 'themeLight', desc: '', args: []);
   }
 
   /// `Dark`
   String get themeDark {
+    return Intl.message('Dark', name: 'themeDark', desc: '', args: []);
+  }
+
+  /// `OLED Black`
+  String get themeOled {
+    return Intl.message('OLED Black', name: 'themeOled', desc: '', args: []);
+  }
+
+  /// `Material You`
+  String get themeDynamic {
     return Intl.message(
-      'Dark',
-      name: 'themeDark',
+      'Material You',
+      name: 'themeDynamic',
       desc: '',
       args: [],
     );
@@ -102,22 +101,12 @@ class S {
 
   /// `Piped`
   String get servicePiped {
-    return Intl.message(
-      'Piped',
-      name: 'servicePiped',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Piped', name: 'servicePiped', desc: '', args: []);
   }
 
   /// `Explode`
   String get serviceExplode {
-    return Intl.message(
-      'Explode',
-      name: 'serviceExplode',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Explode', name: 'serviceExplode', desc: '', args: []);
   }
 
   /// `Invidious`
@@ -142,112 +131,57 @@ class S {
 
   /// `144p`
   String get quality144p {
-    return Intl.message(
-      '144p',
-      name: 'quality144p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('144p', name: 'quality144p', desc: '', args: []);
   }
 
   /// `240p`
   String get quality240p {
-    return Intl.message(
-      '240p',
-      name: 'quality240p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('240p', name: 'quality240p', desc: '', args: []);
   }
 
   /// `360p`
   String get quality360p {
-    return Intl.message(
-      '360p',
-      name: 'quality360p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('360p', name: 'quality360p', desc: '', args: []);
   }
 
   /// `480p`
   String get quality480p {
-    return Intl.message(
-      '480p',
-      name: 'quality480p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('480p', name: 'quality480p', desc: '', args: []);
   }
 
   /// `720p`
   String get quality720p {
-    return Intl.message(
-      '720p',
-      name: 'quality720p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('720p', name: 'quality720p', desc: '', args: []);
   }
 
   /// `1080p`
   String get quality1080p {
-    return Intl.message(
-      '1080p',
-      name: 'quality1080p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('1080p', name: 'quality1080p', desc: '', args: []);
   }
 
   /// `1440p`
   String get quality1440p {
-    return Intl.message(
-      '1440p',
-      name: 'quality1440p',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('1440p', name: 'quality1440p', desc: '', args: []);
   }
 
   /// `Filters`
   String get searchFilters {
-    return Intl.message(
-      'Filters',
-      name: 'searchFilters',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Filters', name: 'searchFilters', desc: '', args: []);
   }
 
   /// `All`
   String get filterAll {
-    return Intl.message(
-      'All',
-      name: 'filterAll',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('All', name: 'filterAll', desc: '', args: []);
   }
 
   /// `Videos`
   String get filterVideos {
-    return Intl.message(
-      'Videos',
-      name: 'filterVideos',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Videos', name: 'filterVideos', desc: '', args: []);
   }
 
   /// `Channels`
   String get filterChannels {
-    return Intl.message(
-      'Channels',
-      name: 'filterChannels',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Channels', name: 'filterChannels', desc: '', args: []);
   }
 
   /// `Playlists`
@@ -262,62 +196,32 @@ class S {
 
   /// `Playlist`
   String get playlist {
-    return Intl.message(
-      'Playlist',
-      name: 'playlist',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Playlist', name: 'playlist', desc: '', args: []);
   }
 
   /// `Music`
   String get filterMusic {
-    return Intl.message(
-      'Music',
-      name: 'filterMusic',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Music', name: 'filterMusic', desc: '', args: []);
   }
 
   /// `Video Fit`
   String get videoFit {
-    return Intl.message(
-      'Video Fit',
-      name: 'videoFit',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Video Fit', name: 'videoFit', desc: '', args: []);
   }
 
   /// `Contain`
   String get videoFitContain {
-    return Intl.message(
-      'Contain',
-      name: 'videoFitContain',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Contain', name: 'videoFitContain', desc: '', args: []);
   }
 
   /// `Cover`
   String get videoFitCover {
-    return Intl.message(
-      'Cover',
-      name: 'videoFitCover',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Cover', name: 'videoFitCover', desc: '', args: []);
   }
 
   /// `Fill`
   String get videoFitFill {
-    return Intl.message(
-      'Fill',
-      name: 'videoFitFill',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Fill', name: 'videoFitFill', desc: '', args: []);
   }
 
   /// `Fit Width`
@@ -362,12 +266,7 @@ class S {
 
   /// `seconds`
   String get seconds {
-    return Intl.message(
-      'seconds',
-      name: 'seconds',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('seconds', name: 'seconds', desc: '', args: []);
   }
 
   /// `SponsorBlock`
@@ -402,32 +301,17 @@ class S {
 
   /// `Sponsor`
   String get sponsor {
-    return Intl.message(
-      'Sponsor',
-      name: 'sponsor',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sponsor', name: 'sponsor', desc: '', args: []);
   }
 
   /// `Intro`
   String get intro {
-    return Intl.message(
-      'Intro',
-      name: 'intro',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Intro', name: 'intro', desc: '', args: []);
   }
 
   /// `Outro`
   String get outro {
-    return Intl.message(
-      'Outro',
-      name: 'outro',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Outro', name: 'outro', desc: '', args: []);
   }
 
   /// `Self Promotion`
@@ -442,12 +326,7 @@ class S {
 
   /// `Interaction`
   String get interaction {
-    return Intl.message(
-      'Interaction',
-      name: 'interaction',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Interaction', name: 'interaction', desc: '', args: []);
   }
 
   /// `Music: Non-Music`
@@ -482,22 +361,12 @@ class S {
 
   /// `Export Data`
   String get exportData {
-    return Intl.message(
-      'Export Data',
-      name: 'exportData',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Export Data', name: 'exportData', desc: '', args: []);
   }
 
   /// `Import Data`
   String get importData {
-    return Intl.message(
-      'Import Data',
-      name: 'importData',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Import Data', name: 'importData', desc: '', args: []);
   }
 
   /// `Export Subscriptions`
@@ -572,32 +441,17 @@ class S {
 
   /// `Select File`
   String get selectFile {
-    return Intl.message(
-      'Select File',
-      name: 'selectFile',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Select File', name: 'selectFile', desc: '', args: []);
   }
 
   /// `Home Feed`
   String get homeFeedMode {
-    return Intl.message(
-      'Home Feed',
-      name: 'homeFeedMode',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Home Feed', name: 'homeFeedMode', desc: '', args: []);
   }
 
   /// `Auto`
   String get homeFeedModeAuto {
-    return Intl.message(
-      'Auto',
-      name: 'homeFeedModeAuto',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Auto', name: 'homeFeedModeAuto', desc: '', args: []);
   }
 
   /// `Subscriptions`
@@ -672,12 +526,7 @@ class S {
 
   /// `Profiles`
   String get profiles {
-    return Intl.message(
-      'Profiles',
-      name: 'profiles',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Profiles', name: 'profiles', desc: '', args: []);
   }
 
   /// `Create separate profiles for different accounts or preferences`
@@ -692,12 +541,7 @@ class S {
 
   /// `Add Profile`
   String get addProfile {
-    return Intl.message(
-      'Add Profile',
-      name: 'addProfile',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Add Profile', name: 'addProfile', desc: '', args: []);
   }
 
   /// `Delete Profile`
@@ -752,22 +596,12 @@ class S {
 
   /// `Default`
   String get defaultProfile {
-    return Intl.message(
-      'Default',
-      name: 'defaultProfile',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Default', name: 'defaultProfile', desc: '', args: []);
   }
 
   /// `Active`
   String get profileInUse {
-    return Intl.message(
-      'Active',
-      name: 'profileInUse',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Active', name: 'profileInUse', desc: '', args: []);
   }
 
   /// `Cannot delete default profile`
@@ -792,12 +626,7 @@ class S {
 
   /// `Audio Focus`
   String get audioFocus {
-    return Intl.message(
-      'Audio Focus',
-      name: 'audioFocus',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Audio Focus', name: 'audioFocus', desc: '', args: []);
   }
 
   /// `Pause playback on interruptions`
@@ -852,12 +681,7 @@ class S {
 
   /// `Small`
   String get subtitleSizeSmall {
-    return Intl.message(
-      'Small',
-      name: 'subtitleSizeSmall',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Small', name: 'subtitleSizeSmall', desc: '', args: []);
   }
 
   /// `Medium`
@@ -872,12 +696,7 @@ class S {
 
   /// `Large`
   String get subtitleSizeLarge {
-    return Intl.message(
-      'Large',
-      name: 'subtitleSizeLarge',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Large', name: 'subtitleSizeLarge', desc: '', args: []);
   }
 
   /// `Extra Large`
@@ -902,12 +721,7 @@ class S {
 
   /// `Saved`
   String get saved {
-    return Intl.message(
-      'Saved',
-      name: 'saved',
-      desc: 'Saved label',
-      args: [],
-    );
+    return Intl.message('Saved', name: 'saved', desc: 'Saved label', args: []);
   }
 
   /// `Settings`
@@ -1180,12 +994,7 @@ class S {
 
   /// `Theme`
   String get theme {
-    return Intl.message(
-      'Theme',
-      name: 'theme',
-      desc: 'Theme label',
-      args: [],
-    );
+    return Intl.message('Theme', name: 'theme', desc: 'Theme label', args: []);
   }
 
   /// `Developer`
@@ -1220,22 +1029,12 @@ class S {
 
   /// `About`
   String get about {
-    return Intl.message(
-      'About',
-      name: 'about',
-      desc: 'About label',
-      args: [],
-    );
+    return Intl.message('About', name: 'about', desc: 'About label', args: []);
   }
 
   /// `Video`
   String get video {
-    return Intl.message(
-      'Video',
-      name: 'video',
-      desc: 'Video label',
-      args: [],
-    );
+    return Intl.message('Video', name: 'video', desc: 'Video label', args: []);
   }
 
   /// `unknown`
@@ -1260,12 +1059,7 @@ class S {
 
   /// `Retry`
   String get retry {
-    return Intl.message(
-      'Retry',
-      name: 'retry',
-      desc: 'Retry label',
-      args: [],
-    );
+    return Intl.message('Retry', name: 'retry', desc: 'Retry label', args: []);
   }
 
   /// `{count, plural, =1{Reply} other{Replies}}`
@@ -1282,42 +1076,22 @@ class S {
 
   /// `Canada`
   String get canada {
-    return Intl.message(
-      'Canada',
-      name: 'canada',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Canada', name: 'canada', desc: '', args: []);
   }
 
   /// `France`
   String get france {
-    return Intl.message(
-      'France',
-      name: 'france',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('France', name: 'france', desc: '', args: []);
   }
 
   /// `India`
   String get india {
-    return Intl.message(
-      'India',
-      name: 'india',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('India', name: 'india', desc: '', args: []);
   }
 
   /// `Netherlands`
   String get netherlands {
-    return Intl.message(
-      'Netherlands',
-      name: 'netherlands',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Netherlands', name: 'netherlands', desc: '', args: []);
   }
 
   /// `United Kingdom`
@@ -1392,12 +1166,7 @@ class S {
 
   /// `Share`
   String get share {
-    return Intl.message(
-      'Share',
-      name: 'share',
-      desc: 'Share label.',
-      args: [],
-    );
+    return Intl.message('Share', name: 'share', desc: 'Share label.', args: []);
   }
 
   /// `Include title`
@@ -1412,12 +1181,7 @@ class S {
 
   /// `Instances`
   String get instances {
-    return Intl.message(
-      'Instances',
-      name: 'instances',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Instances', name: 'instances', desc: '', args: []);
   }
 
   /// `Please consider switching to a different region for better results.`
@@ -1482,12 +1246,7 @@ class S {
 
   /// `Pinned`
   String get pinned {
-    return Intl.message(
-      'Pinned',
-      name: 'pinned',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Pinned', name: 'pinned', desc: '', args: []);
   }
 
   /// `Disable PIP player`
@@ -1502,32 +1261,17 @@ class S {
 
   /// `Videos`
   String get videos {
-    return Intl.message(
-      'Videos',
-      name: 'videos',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Videos', name: 'videos', desc: '', args: []);
   }
 
   /// `Shorts`
   String get shorts {
-    return Intl.message(
-      'Shorts',
-      name: 'shorts',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Shorts', name: 'shorts', desc: '', args: []);
   }
 
   /// `Playlists`
   String get playlists {
-    return Intl.message(
-      'Playlists',
-      name: 'playlists',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Playlists', name: 'playlists', desc: '', args: []);
   }
 
   /// `No shorts available`
@@ -1552,102 +1296,52 @@ class S {
 
   /// `Library`
   String get library {
-    return Intl.message(
-      'Library',
-      name: 'library',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Library', name: 'library', desc: '', args: []);
   }
 
   /// `Sort by`
   String get sortBy {
-    return Intl.message(
-      'Sort by',
-      name: 'sortBy',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sort by', name: 'sortBy', desc: '', args: []);
   }
 
   /// `Date added`
   String get dateAdded {
-    return Intl.message(
-      'Date added',
-      name: 'dateAdded',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Date added', name: 'dateAdded', desc: '', args: []);
   }
 
   /// `Title`
   String get title {
-    return Intl.message(
-      'Title',
-      name: 'title',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Title', name: 'title', desc: '', args: []);
   }
 
   /// `Duration`
   String get duration {
-    return Intl.message(
-      'Duration',
-      name: 'duration',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Duration', name: 'duration', desc: '', args: []);
   }
 
   /// `selected`
   String get selected {
-    return Intl.message(
-      'selected',
-      name: 'selected',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('selected', name: 'selected', desc: '', args: []);
   }
 
   /// `Select all`
   String get selectAll {
-    return Intl.message(
-      'Select all',
-      name: 'selectAll',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Select all', name: 'selectAll', desc: '', args: []);
   }
 
   /// `Delete`
   String get delete {
-    return Intl.message(
-      'Delete',
-      name: 'delete',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Delete', name: 'delete', desc: '', args: []);
   }
 
   /// `Cancel`
   String get cancel {
-    return Intl.message(
-      'Cancel',
-      name: 'cancel',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Cancel', name: 'cancel', desc: '', args: []);
   }
 
   /// `Sort`
   String get sort {
-    return Intl.message(
-      'Sort',
-      name: 'sort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sort', name: 'sort', desc: '', args: []);
   }
 
   /// `Select videos`
@@ -1702,12 +1396,7 @@ class S {
 
   /// `Clear all`
   String get clearAll {
-    return Intl.message(
-      'Clear all',
-      name: 'clearAll',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Clear all', name: 'clearAll', desc: '', args: []);
   }
 
   /// `Search saved videos...`
@@ -1802,12 +1491,7 @@ class S {
 
   /// `views`
   String get views {
-    return Intl.message(
-      'views',
-      name: 'views',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('views', name: 'views', desc: '', args: []);
   }
 
   /// `Subscriptions`
@@ -1822,12 +1506,7 @@ class S {
 
   /// `Channels`
   String get channels {
-    return Intl.message(
-      'Channels',
-      name: 'channels',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Channels', name: 'channels', desc: '', args: []);
   }
 
   /// `Search subscriptions...`
@@ -1862,12 +1541,7 @@ class S {
 
   /// `Unsubscribe`
   String get unsubscribe {
-    return Intl.message(
-      'Unsubscribe',
-      name: 'unsubscribe',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Unsubscribe', name: 'unsubscribe', desc: '', args: []);
   }
 
   /// `Unsubscribe from this channel?`
@@ -1882,12 +1556,7 @@ class S {
 
   /// `Search`
   String get search {
-    return Intl.message(
-      'Search',
-      name: 'search',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Search', name: 'search', desc: '', args: []);
   }
 
   /// `Search YouTube...`
@@ -2282,12 +1951,7 @@ class S {
 
   /// `All`
   String get all {
-    return Intl.message(
-      'All',
-      name: 'all',
-      desc: 'All tab label',
-      args: [],
-    );
+    return Intl.message('All', name: 'all', desc: 'All tab label', args: []);
   }
 
   /// `An unknown error occurred`
@@ -2386,6 +2050,575 @@ class S {
       'Failed to save to device',
       name: 'saveToDeviceFailed',
       desc: 'Error message when save to device fails',
+      args: [],
+    );
+  }
+  /// `Cast`
+  String get castTitle {
+    return Intl.message(
+      'Cast',
+      name: 'castTitle',
+      desc: 'Cast button label',
+      args: [],
+    );
+  }
+
+  /// `Connected`
+  String get castConnected {
+    return Intl.message(
+      'Connected',
+      name: 'castConnected',
+      desc: 'Cast connected state',
+      args: [],
+    );
+  }
+
+  /// `Casting to {device}`
+  String castConnectedTo(String device) {
+    return Intl.message(
+      'Casting to $device',
+      name: 'castConnectedTo',
+      desc: 'Cast target device',
+      args: [device],
+    );
+  }
+
+  /// `Stop casting`
+  String get castStop {
+    return Intl.message(
+      'Stop casting',
+      name: 'castStop',
+      desc: 'Ends the Cast session',
+      args: [],
+    );
+  }
+
+  /// `Cast is not available on this device`
+  String get castUnavailable {
+    return Intl.message(
+      'Cast is not available on this device',
+      name: 'castUnavailable',
+      desc: 'Shown when the Cast framework is missing',
+      args: [],
+    );
+  }
+
+  /// `This video cannot be cast`
+  String get castFailed {
+    return Intl.message(
+      'This video cannot be cast',
+      name: 'castFailed',
+      desc: 'No castable stream exists',
+      args: [],
+    );
+  }
+
+  /// `New upload notifications`
+  String get newVideoNotifications {
+    return Intl.message(
+      'New upload notifications',
+      name: 'newVideoNotifications',
+      desc: 'Setting for subscription upload notifications',
+      args: [],
+    );
+  }
+
+  /// `Get notified when channels you subscribe to upload`
+  String get newVideoNotificationsDescription {
+    return Intl.message(
+      'Get notified when channels you subscribe to upload',
+      name: 'newVideoNotificationsDescription',
+      desc: 'Description for upload notification setting',
+      args: [],
+    );
+  }
+
+  /// `Notification permission was denied`
+  String get notificationsDenied {
+    return Intl.message(
+      'Notification permission was denied',
+      name: 'notificationsDenied',
+      desc: 'Shown when the notification permission is refused',
+      args: [],
+    );
+  }
+
+  /// `Queue`
+  String get queue {
+    return Intl.message(
+      'Queue',
+      name: 'queue',
+      desc: 'Playback queue title',
+      args: [],
+    );
+  }
+
+  /// `Queue is empty`
+  String get queueEmpty {
+    return Intl.message(
+      'Queue is empty',
+      name: 'queueEmpty',
+      desc: 'Empty playback queue',
+      args: [],
+    );
+  }
+
+  /// `Shuffle`
+  String get queueShuffle {
+    return Intl.message(
+      'Shuffle',
+      name: 'queueShuffle',
+      desc: 'Shuffles the upcoming queue',
+      args: [],
+    );
+  }
+
+  /// `Clear`
+  String get queueClear {
+    return Intl.message(
+      'Clear',
+      name: 'queueClear',
+      desc: 'Clears the playback queue',
+      args: [],
+    );
+  }
+
+  /// `Remove from queue`
+  String get removeFromQueue {
+    return Intl.message(
+      'Remove from queue',
+      name: 'removeFromQueue',
+      desc: 'Removes one queue entry',
+      args: [],
+    );
+  }
+
+  /// `Play next`
+  String get playNext {
+    return Intl.message(
+      'Play next',
+      name: 'playNext',
+      desc: 'Queues a video directly after the current one',
+      args: [],
+    );
+  }
+
+  /// `Add to queue`
+  String get addToQueue {
+    return Intl.message(
+      'Add to queue',
+      name: 'addToQueue',
+      desc: 'Appends a video to the queue',
+      args: [],
+    );
+  }
+
+  /// `Added to queue`
+  String get addedToQueue {
+    return Intl.message(
+      'Added to queue',
+      name: 'addedToQueue',
+      desc: 'Confirmation for queue append',
+      args: [],
+    );
+  }
+
+  /// `Added to play next`
+  String get addedToPlayNext {
+    return Intl.message(
+      'Added to play next',
+      name: 'addedToPlayNext',
+      desc: 'Confirmation for play next',
+      args: [],
+    );
+  }
+
+  /// `Save to playlist`
+  String get saveToPlaylist {
+    return Intl.message(
+      'Save to playlist',
+      name: 'saveToPlaylist',
+      desc: 'Playlist picker title',
+      args: [],
+    );
+  }
+
+  /// `Playlists`
+  String get localPlaylists {
+    return Intl.message(
+      'Playlists',
+      name: 'localPlaylists',
+      desc: 'Local playlists screen title',
+      args: [],
+    );
+  }
+
+  /// `New Playlist`
+  String get newPlaylist {
+    return Intl.message(
+      'New Playlist',
+      name: 'newPlaylist',
+      desc: 'New playlist dialog title',
+      args: [],
+    );
+  }
+
+  /// `+ New`
+  String get newPlaylistShort {
+    return Intl.message(
+      '+ New',
+      name: 'newPlaylistShort',
+      desc: 'Compact create-playlist action',
+      args: [],
+    );
+  }
+
+  /// `Playlist name`
+  String get playlistNameHint {
+    return Intl.message(
+      'Playlist name',
+      name: 'playlistNameHint',
+      desc: 'Playlist name field hint',
+      args: [],
+    );
+  }
+
+  /// `Create`
+  String get createAction {
+    return Intl.message(
+      'Create',
+      name: 'createAction',
+      desc: 'Confirms creation',
+      args: [],
+    );
+  }
+
+  /// `Rename`
+  String get renameAction {
+    return Intl.message(
+      'Rename',
+      name: 'renameAction',
+      desc: 'Renames an item',
+      args: [],
+    );
+  }
+
+  /// `Rename Playlist`
+  String get renamePlaylistTitle {
+    return Intl.message(
+      'Rename Playlist',
+      name: 'renamePlaylistTitle',
+      desc: 'Rename playlist dialog title',
+      args: [],
+    );
+  }
+
+  /// `New name`
+  String get newNameHint {
+    return Intl.message(
+      'New name',
+      name: 'newNameHint',
+      desc: 'New name field hint',
+      args: [],
+    );
+  }
+
+  /// `Delete Playlist`
+  String get deletePlaylistTitle {
+    return Intl.message(
+      'Delete Playlist',
+      name: 'deletePlaylistTitle',
+      desc: 'Delete playlist dialog title',
+      args: [],
+    );
+  }
+
+  /// `Delete playlist`
+  String get deletePlaylistAction {
+    return Intl.message(
+      'Delete playlist',
+      name: 'deletePlaylistAction',
+      desc: 'Deletes a playlist',
+      args: [],
+    );
+  }
+
+  /// `Delete {name}?`
+  String deletePlaylistConfirm(String name) {
+    return Intl.message(
+      'Delete $name?',
+      name: 'deletePlaylistConfirm',
+      desc: 'Confirms deleting a named playlist',
+      args: [name],
+    );
+  }
+
+  /// `No playlists yet. Tap + to create one.`
+  String get noPlaylistsYet {
+    return Intl.message(
+      'No playlists yet.\nTap + to create one.',
+      name: 'noPlaylistsYet',
+      desc: 'Empty local playlists screen',
+      args: [],
+    );
+  }
+
+  /// `No playlists yet. Tap + New to create one.`
+  String get noPlaylistsYetPicker {
+    return Intl.message(
+      'No playlists yet.\nTap + New to create one.',
+      name: 'noPlaylistsYetPicker',
+      desc: 'Empty playlist picker',
+      args: [],
+    );
+  }
+
+  /// `Added to {name}`
+  String addedToPlaylist(String name) {
+    return Intl.message(
+      'Added to $name',
+      name: 'addedToPlaylist',
+      desc: 'Confirms adding a video to a named playlist',
+      args: [name],
+    );
+  }
+
+  /// `Play all`
+  String get playAll {
+    return Intl.message(
+      'Play all',
+      name: 'playAll',
+      desc: 'Plays every video in a playlist',
+      args: [],
+    );
+  }
+
+  /// `Playlist not found`
+  String get playlistNotFound {
+    return Intl.message(
+      'Playlist not found',
+      name: 'playlistNotFound',
+      desc: 'Missing playlist',
+      args: [],
+    );
+  }
+
+  /// `No videos yet`
+  String get noVideosInPlaylist {
+    return Intl.message(
+      'No videos yet',
+      name: 'noVideosInPlaylist',
+      desc: 'Empty playlist',
+      args: [],
+    );
+  }
+
+  /// `Long-press a video to save it to a playlist`
+  String get addVideosHint {
+    return Intl.message(
+      'Long-press a video to save it to a playlist',
+      name: 'addVideosHint',
+      desc: 'Hint for filling an empty playlist',
+      args: [],
+    );
+  }
+
+  /// `{count} videos`
+  String videoCountLabel(int count) {
+    return Intl.message(
+      '$count videos',
+      name: 'videoCountLabel',
+      desc: 'Number of videos',
+      args: [count],
+    );
+  }
+
+  /// `Debug Console`
+  String get debugConsole {
+    return Intl.message(
+      'Debug Console',
+      name: 'debugConsole',
+      desc: 'Debug console screen title',
+      args: [],
+    );
+  }
+
+  /// `Share logs`
+  String get shareLogs {
+    return Intl.message(
+      'Share logs',
+      name: 'shareLogs',
+      desc: 'Shares the collected log file',
+      args: [],
+    );
+  }
+
+  /// `Clear logs`
+  String get clearLogs {
+    return Intl.message(
+      'Clear logs',
+      name: 'clearLogs',
+      desc: 'Clears collected logs',
+      args: [],
+    );
+  }
+
+  /// `Auto-scroll on`
+  String get autoScrollOn {
+    return Intl.message(
+      'Auto-scroll on',
+      name: 'autoScrollOn',
+      desc: 'Log auto-scroll enabled',
+      args: [],
+    );
+  }
+
+  /// `Auto-scroll off`
+  String get autoScrollOff {
+    return Intl.message(
+      'Auto-scroll off',
+      name: 'autoScrollOff',
+      desc: 'Log auto-scroll disabled',
+      args: [],
+    );
+  }
+
+  /// `No logs yet`
+  String get noLogs {
+    return Intl.message(
+      'No logs yet',
+      name: 'noLogs',
+      desc: 'Empty log console',
+      args: [],
+    );
+  }
+
+  /// `Logs`
+  String get logsLabel {
+    return Intl.message(
+      'Logs',
+      name: 'logsLabel',
+      desc: 'Log count label',
+      args: [],
+    );
+  }
+
+  /// `Image Cache`
+  String get imageCacheLabel {
+    return Intl.message(
+      'Image Cache',
+      name: 'imageCacheLabel',
+      desc: 'Image cache size label',
+      args: [],
+    );
+  }
+
+  /// `Platform`
+  String get platformLabel {
+    return Intl.message(
+      'Platform',
+      name: 'platformLabel',
+      desc: 'Operating system label',
+      args: [],
+    );
+  }
+
+  /// `Sleep timer`
+  String get sleepTimer {
+    return Intl.message(
+      'Sleep timer',
+      name: 'sleepTimer',
+      desc: 'Sleep timer setting',
+      args: [],
+    );
+  }
+
+  /// `Off`
+  String get sleepTimerOff {
+    return Intl.message(
+      'Off',
+      name: 'sleepTimerOff',
+      desc: 'Sleep timer disabled',
+      args: [],
+    );
+  }
+
+  /// `End of video`
+  String get sleepTimerEndOfVideo {
+    return Intl.message(
+      'End of video',
+      name: 'sleepTimerEndOfVideo',
+      desc: 'Sleep timer stops when the video ends',
+      args: [],
+    );
+  }
+
+  /// `{count} minutes`
+  String sleepTimerMinutes(int count) {
+    return Intl.message(
+      '$count minutes',
+      name: 'sleepTimerMinutes',
+      desc: 'Sleep timer duration',
+      args: [count],
+    );
+  }
+
+  /// `{count} min`
+  String sleepTimerMinutesShort(int count) {
+    return Intl.message(
+      '$count min',
+      name: 'sleepTimerMinutesShort',
+      desc: 'Compact sleep timer duration',
+      args: [count],
+    );
+  }
+
+  /// `Custom`
+  String get sleepTimerCustom {
+    return Intl.message(
+      'Custom',
+      name: 'sleepTimerCustom',
+      desc: 'Custom sleep timer duration',
+      args: [],
+    );
+  }
+
+  /// `Custom timer`
+  String get sleepTimerCustomTitle {
+    return Intl.message(
+      'Custom timer',
+      name: 'sleepTimerCustomTitle',
+      desc: 'Custom timer dialog title',
+      args: [],
+    );
+  }
+
+  /// `Enter minutes`
+  String get sleepTimerEnterMinutes {
+    return Intl.message(
+      'Enter minutes',
+      name: 'sleepTimerEnterMinutes',
+      desc: 'Custom timer field hint',
+      args: [],
+    );
+  }
+
+  /// `Set`
+  String get sleepTimerSet {
+    return Intl.message(
+      'Set',
+      name: 'sleepTimerSet',
+      desc: 'Confirms the custom timer',
+      args: [],
+    );
+  }
+
+  /// `Sleep timer ended`
+  String get sleepTimerEnded {
+    return Intl.message(
+      'Sleep timer ended',
+      name: 'sleepTimerEnded',
+      desc: 'Sleep timer fired',
       args: [],
     );
   }

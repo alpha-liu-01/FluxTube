@@ -1,3 +1,4 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,12 +19,23 @@ import 'package:fluxtube/presentation/routes/app_routes.dart';
 import 'package:fluxtube/presentation/routes/bloc_observer.dart';
 import 'package:fluxtube/presentation/watch/widgets/global_pip_overlay.dart';
 import 'package:fluxtube/core/services/audio_handler_service.dart';
+import 'package:fluxtube/core/services/log_collector.dart';
+import 'package:fluxtube/core/services/subscription_notifier.dart';
 import 'package:media_kit/media_kit.dart';
 
 import 'core/di/injectable.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Mirror framework debug output into the in-app log collector so the Debug
+  // Console can surface it for bug reports. LogCollector re-emits through
+  // dart:developer, so console output is preserved.
+  debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null) {
+      LogCollector().log(message, tag: 'FLUTTER');
+    }
+  };
 
   // Initialize media_kit
   MediaKit.ensureInitialized();
@@ -57,6 +69,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       DownloadNotificationService().initialize();
       // Initialize audio service for background playback notification controls
       initAudioService();
+      // Look for new uploads from subscribed channels. Self-throttling and a
+      // no-op unless the user turned notifications on.
+      SubscriptionNotifier().checkForNewVideos();
     });
   }
 
@@ -74,6 +89,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // When app is detached (being destroyed), stop the player to prevent crash
     if (state == AppLifecycleState.detached) {
       GlobalPlayerController().disposePlayer();
+    }
+    // Returning to the foreground is the only chance to poll for new uploads,
+    // since there is no background job. The check throttles itself.
+    if (state == AppLifecycleState.resumed) {
+      SubscriptionNotifier().checkForNewVideos();
     }
   }
 
@@ -93,11 +113,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             previous.themeMode != current.themeMode ||
             previous.defaultLanguage != current.defaultLanguage,
         builder: (context, state) {
+          final mode = state.themeMode;
+
+          if (mode == 'dynamic') {
+            return DynamicColorBuilder(
+              builder: (lightDynamic, darkDynamic) {
+                return MaterialApp.router(
+                  title: AppInfo.myApp.name,
+                  theme: AppTheme.dynamicTheme(lightDynamic ?? ColorScheme.fromSeed(seedColor: Colors.blue)),
+                  darkTheme: AppTheme.dynamicTheme(darkDynamic ?? const ColorScheme.dark()),
+                  themeMode: ThemeMode.system,
+                  debugShowCheckedModeBanner: false,
+                  routerConfig: router,
+                  localizationsDelegates: const [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    S.delegate,
+                  ],
+                  supportedLocales: supportedLocales,
+                  locale: Locale(state.defaultLanguage),
+                  builder: (context, child) {
+                    return GlobalPipOverlay(
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
+                );
+              },
+            );
+          }
+
+          final isOled = mode == 'oled';
           return MaterialApp.router(
             title: AppInfo.myApp.name,
             theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: _getThemeMode(state.themeMode),
+            darkTheme: isOled ? AppTheme.oledTheme : AppTheme.darkTheme,
+            themeMode: _getThemeMode(mode),
             debugShowCheckedModeBanner: false,
             routerConfig: router,
             localizationsDelegates: const [
@@ -122,6 +173,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   ThemeMode _getThemeMode(String themeMode) {
     switch (themeMode) {
       case 'dark':
+      case 'oled':
         return ThemeMode.dark;
       case 'light':
         return ThemeMode.light;

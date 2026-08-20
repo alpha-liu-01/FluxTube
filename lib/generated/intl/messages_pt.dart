@@ -31,87 +31,99 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "about": MessageLookupByLibrary.simpleMessage("Sobre"),
-        "canada": MessageLookupByLibrary.simpleMessage("Canadá"),
-        "channelSubscribers": m0,
-        "commentAuthorNotFound":
-            MessageLookupByLibrary.simpleMessage("Não encontrado"),
-        "commonSettingsTitle": MessageLookupByLibrary.simpleMessage("Comum"),
-        "defaultQuality":
-            MessageLookupByLibrary.simpleMessage("Qualidade padrão"),
-        "developer": MessageLookupByLibrary.simpleMessage("Desenvolvedor"),
-        "disablePipPlayer":
-            MessageLookupByLibrary.simpleMessage("Disable PIP player"),
-        "disableVideoHistory": MessageLookupByLibrary.simpleMessage(
-            "Desativar histórico de vídeos"),
-        "distractionFree":
-            MessageLookupByLibrary.simpleMessage("Sem distração"),
-        "enableHlsPlayerDescription": MessageLookupByLibrary.simpleMessage(
-            "Ativa tocador HLS para habilitar todas as opções de qualidade.\nDesativar em caso de erros."),
-        "france": MessageLookupByLibrary.simpleMessage("França"),
-        "hideComments":
-            MessageLookupByLibrary.simpleMessage("Esconder Comentários"),
-        "hideCommentsButtonFromWatchScreen":
-            MessageLookupByLibrary.simpleMessage(
-                "Esconde botão comentários da tela."),
-        "hideRelated":
-            MessageLookupByLibrary.simpleMessage("Esconder Relacionados"),
-        "hideRelatedVideosFromWatchScreen":
-            MessageLookupByLibrary.simpleMessage(
-                "Esconde vídeos relacionados da tela"),
-        "history": MessageLookupByLibrary.simpleMessage("Histórico"),
-        "hlsPlayer": MessageLookupByLibrary.simpleMessage("Tocador Hls"),
-        "home": MessageLookupByLibrary.simpleMessage("Início"),
-        "includeTitle": MessageLookupByLibrary.simpleMessage("Incluir título"),
-        "india": MessageLookupByLibrary.simpleMessage("Índia"),
-        "instances": MessageLookupByLibrary.simpleMessage("Instâncias"),
-        "language": MessageLookupByLibrary.simpleMessage("Idioma"),
-        "netherlands": MessageLookupByLibrary.simpleMessage("Holanda"),
-        "noCommentsFound":
-            MessageLookupByLibrary.simpleMessage("No Comments Found"),
-        "noUploadDate": MessageLookupByLibrary.simpleMessage("Sem data"),
-        "noUploaderName": MessageLookupByLibrary.simpleMessage("Sem nome"),
-        "noVideoAvailableChangedToHls": MessageLookupByLibrary.simpleMessage(
-            "Nenhuma fonte de vídeo disponível, mudando automaticamente para hls"),
-        "noVideoDescription":
-            MessageLookupByLibrary.simpleMessage("Sem descrição"),
-        "noVideoTitle": MessageLookupByLibrary.simpleMessage("Sem título"),
-        "readMoreText": MessageLookupByLibrary.simpleMessage("Ler mais"),
-        "region": MessageLookupByLibrary.simpleMessage("Região"),
-        "relatedTitle": MessageLookupByLibrary.simpleMessage("Relacionado"),
-        "repliesPlural": m1,
-        "retrieveDislikeCounts": MessageLookupByLibrary.simpleMessage(
-            "Recupera contagem de dislikes"),
-        "retrieveDislikes":
-            MessageLookupByLibrary.simpleMessage("Recuperar Dislikes"),
-        "retry": MessageLookupByLibrary.simpleMessage("Tenta novamente"),
-        "saved": MessageLookupByLibrary.simpleMessage("Salvos"),
-        "savedVideosTitle":
-            MessageLookupByLibrary.simpleMessage("Vídeos salvos"),
-        "settings": MessageLookupByLibrary.simpleMessage("Configurações"),
-        "share": MessageLookupByLibrary.simpleMessage("Compartilhar"),
-        "showLessText": MessageLookupByLibrary.simpleMessage("Mostrar menos"),
-        "subscribe": MessageLookupByLibrary.simpleMessage("Inscrever"),
-        "swipeDownToDismissDisabled": MessageLookupByLibrary.simpleMessage(
-            "\'Swipe down to dismiss\' disabled"),
-        "swipeUpToDismissEnabled": MessageLookupByLibrary.simpleMessage(
-            "\'Swipe up to dismiss\' enabled"),
-        "switchRegion": MessageLookupByLibrary.simpleMessage(
-            "Por favor, considere trocar a região para melhores resultados."),
-        "theme": MessageLookupByLibrary.simpleMessage("Tema"),
-        "thereIsNoSavedOrHistoryVideos": MessageLookupByLibrary.simpleMessage(
-            "Não existem vídeos/histórico salvos"),
-        "thereIsNoSavedVideos":
-            MessageLookupByLibrary.simpleMessage("Não existem vídeos salvos"),
-        "translators": MessageLookupByLibrary.simpleMessage("Tradutores"),
-        "trending": MessageLookupByLibrary.simpleMessage("Tendência"),
-        "unitedKingdom": MessageLookupByLibrary.simpleMessage("Reino Unido"),
-        "unitedStates": MessageLookupByLibrary.simpleMessage("Estados Unidos"),
-        "unknown": MessageLookupByLibrary.simpleMessage("desconhecido"),
-        "unknownQuality":
-            MessageLookupByLibrary.simpleMessage("Qualidade desconhecida"),
-        "version": MessageLookupByLibrary.simpleMessage("Versão"),
-        "video": MessageLookupByLibrary.simpleMessage("Vídeo"),
-        "videoViews": m2
-      };
+    "about": MessageLookupByLibrary.simpleMessage("Sobre"),
+    "canada": MessageLookupByLibrary.simpleMessage("Canadá"),
+    "channelSubscribers": m0,
+    "commentAuthorNotFound": MessageLookupByLibrary.simpleMessage(
+      "Não encontrado",
+    ),
+    "commonSettingsTitle": MessageLookupByLibrary.simpleMessage("Comum"),
+    "defaultQuality": MessageLookupByLibrary.simpleMessage("Qualidade padrão"),
+    "developer": MessageLookupByLibrary.simpleMessage("Desenvolvedor"),
+    "disablePipPlayer": MessageLookupByLibrary.simpleMessage(
+      "Disable PIP player",
+    ),
+    "disableVideoHistory": MessageLookupByLibrary.simpleMessage(
+      "Desativar histórico de vídeos",
+    ),
+    "distractionFree": MessageLookupByLibrary.simpleMessage("Sem distração"),
+    "enableHlsPlayerDescription": MessageLookupByLibrary.simpleMessage(
+      "Ativa tocador HLS para habilitar todas as opções de qualidade.\nDesativar em caso de erros.",
+    ),
+    "france": MessageLookupByLibrary.simpleMessage("França"),
+    "hideComments": MessageLookupByLibrary.simpleMessage(
+      "Esconder Comentários",
+    ),
+    "hideCommentsButtonFromWatchScreen": MessageLookupByLibrary.simpleMessage(
+      "Esconde botão comentários da tela.",
+    ),
+    "hideRelated": MessageLookupByLibrary.simpleMessage(
+      "Esconder Relacionados",
+    ),
+    "hideRelatedVideosFromWatchScreen": MessageLookupByLibrary.simpleMessage(
+      "Esconde vídeos relacionados da tela",
+    ),
+    "history": MessageLookupByLibrary.simpleMessage("Histórico"),
+    "hlsPlayer": MessageLookupByLibrary.simpleMessage("Tocador Hls"),
+    "home": MessageLookupByLibrary.simpleMessage("Início"),
+    "includeTitle": MessageLookupByLibrary.simpleMessage("Incluir título"),
+    "india": MessageLookupByLibrary.simpleMessage("Índia"),
+    "instances": MessageLookupByLibrary.simpleMessage("Instâncias"),
+    "language": MessageLookupByLibrary.simpleMessage("Idioma"),
+    "netherlands": MessageLookupByLibrary.simpleMessage("Holanda"),
+    "noCommentsFound": MessageLookupByLibrary.simpleMessage(
+      "No Comments Found",
+    ),
+    "noUploadDate": MessageLookupByLibrary.simpleMessage("Sem data"),
+    "noUploaderName": MessageLookupByLibrary.simpleMessage("Sem nome"),
+    "noVideoAvailableChangedToHls": MessageLookupByLibrary.simpleMessage(
+      "Nenhuma fonte de vídeo disponível, mudando automaticamente para hls",
+    ),
+    "noVideoDescription": MessageLookupByLibrary.simpleMessage("Sem descrição"),
+    "noVideoTitle": MessageLookupByLibrary.simpleMessage("Sem título"),
+    "readMoreText": MessageLookupByLibrary.simpleMessage("Ler mais"),
+    "region": MessageLookupByLibrary.simpleMessage("Região"),
+    "relatedTitle": MessageLookupByLibrary.simpleMessage("Relacionado"),
+    "repliesPlural": m1,
+    "retrieveDislikeCounts": MessageLookupByLibrary.simpleMessage(
+      "Recupera contagem de dislikes",
+    ),
+    "retrieveDislikes": MessageLookupByLibrary.simpleMessage(
+      "Recuperar Dislikes",
+    ),
+    "retry": MessageLookupByLibrary.simpleMessage("Tenta novamente"),
+    "saved": MessageLookupByLibrary.simpleMessage("Salvos"),
+    "savedVideosTitle": MessageLookupByLibrary.simpleMessage("Vídeos salvos"),
+    "settings": MessageLookupByLibrary.simpleMessage("Configurações"),
+    "share": MessageLookupByLibrary.simpleMessage("Compartilhar"),
+    "showLessText": MessageLookupByLibrary.simpleMessage("Mostrar menos"),
+    "subscribe": MessageLookupByLibrary.simpleMessage("Inscrever"),
+    "swipeDownToDismissDisabled": MessageLookupByLibrary.simpleMessage(
+      "\'Swipe down to dismiss\' disabled",
+    ),
+    "swipeUpToDismissEnabled": MessageLookupByLibrary.simpleMessage(
+      "\'Swipe up to dismiss\' enabled",
+    ),
+    "switchRegion": MessageLookupByLibrary.simpleMessage(
+      "Por favor, considere trocar a região para melhores resultados.",
+    ),
+    "theme": MessageLookupByLibrary.simpleMessage("Tema"),
+    "thereIsNoSavedOrHistoryVideos": MessageLookupByLibrary.simpleMessage(
+      "Não existem vídeos/histórico salvos",
+    ),
+    "thereIsNoSavedVideos": MessageLookupByLibrary.simpleMessage(
+      "Não existem vídeos salvos",
+    ),
+    "translators": MessageLookupByLibrary.simpleMessage("Tradutores"),
+    "trending": MessageLookupByLibrary.simpleMessage("Tendência"),
+    "unitedKingdom": MessageLookupByLibrary.simpleMessage("Reino Unido"),
+    "unitedStates": MessageLookupByLibrary.simpleMessage("Estados Unidos"),
+    "unknown": MessageLookupByLibrary.simpleMessage("desconhecido"),
+    "unknownQuality": MessageLookupByLibrary.simpleMessage(
+      "Qualidade desconhecida",
+    ),
+    "version": MessageLookupByLibrary.simpleMessage("Versão"),
+    "video": MessageLookupByLibrary.simpleMessage("Vídeo"),
+    "videoViews": m2,
+  };
 }

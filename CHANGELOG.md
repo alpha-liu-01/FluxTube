@@ -1,5 +1,27 @@
 ## Changelog
 
+### v0.9.3
+
+###### New Features
+
+- **Google Cast Support**: Cast videos to Chromecast devices directly from the player (Android).
+- **Playback Queue**: Unified "up next" queue with shuffle, clear, and remove — accessible from the player and auto-populated from related videos.
+- **Local Playlists**: Create, rename, and delete playlists; save videos to a playlist or play them all, from the channel video list or player.
+- **Video Chapters**: Chapter markers on the seek bar, parsed from video descriptions.
+- **Sleep Timer**: Stop playback after a set number of minutes or at the end of the current video.
+- **New Upload Notifications**: Get notified when a subscribed channel uploads a new video.
+- **Debug Console**: In-app log viewer for troubleshooting, with share and clear options.
+
+###### Player & Comments
+
+- Added a Queue button to the player controls overlay.
+- Long-press options on video cards now include Play Next, Add to Queue, and Save to Playlist.
+- Improved live stream URL handling and error reporting for HLS streams.
+
+###### Build & Dependencies
+
+- Updated NewPipe Extractor to v0.26.5 (fixes YouTube playlist continuations, adds edited-comment detection).
+
 ### v0.9.2
 
 ###### Playback Improvements

@@ -367,6 +367,11 @@ class _ScreenSavedState extends State<ScreenSaved>
                           ),
                         ] else ...[
                           IconButton(
+                            icon: const Icon(CupertinoIcons.music_note_list),
+                            onPressed: () => context.pushNamed('localPlaylists'),
+                            tooltip: 'Playlists',
+                          ),
+                          IconButton(
                             icon: const Icon(CupertinoIcons.sort_down),
                             onPressed: _showSortOptions,
                             tooltip: locals.sort,

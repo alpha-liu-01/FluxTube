@@ -34,6 +34,7 @@ class NewPipeComment {
   final int? replyCount;
   final bool? isPinned;
   final bool? isHearted;
+  final bool? isEdited;
   final String? uploadDate;
   final String? repliesPage;
 
@@ -48,6 +49,7 @@ class NewPipeComment {
     this.replyCount,
     this.isPinned,
     this.isHearted,
+    this.isEdited,
     this.uploadDate,
     this.repliesPage,
   });

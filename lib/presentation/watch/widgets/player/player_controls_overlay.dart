@@ -11,6 +11,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 
 import 'player_settings_sheet.dart';
+import '../../../watch/widgets/queue_sheet.dart';
 
 /// YouTube-like custom video player controls overlay
 class PlayerControlsOverlay extends StatefulWidget {
@@ -432,6 +433,16 @@ class _PlayerControlsOverlayState extends State<PlayerControlsOverlay>
         currentAudioTrackId: widget.currentAudioTrackId,
         onAudioTrackChanged: widget.onAudioTrackChanged,
       ),
+    ).then((_) => _startHideTimer());
+  }
+
+  void _showQueueSheet() {
+    _hideTimer?.cancel();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const QueueSheet(),
     ).then((_) => _startHideTimer());
   }
 
@@ -933,6 +944,12 @@ class _PlayerControlsOverlayState extends State<PlayerControlsOverlay>
                       : CupertinoIcons.captions_bubble,
                   onTap: _showCaptionsSheet,
                 ),
+
+              // Queue button
+              _buildIconButton(
+                icon: CupertinoIcons.list_bullet,
+                onTap: _showQueueSheet,
+              ),
 
               // Settings button
               _buildIconButton(

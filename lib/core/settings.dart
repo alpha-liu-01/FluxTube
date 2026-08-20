@@ -50,3 +50,8 @@ const searchHistoryVisibilityKey = 'search-history-visibility';
 
 // Auto PiP (enter PiP when pressing home button while video is playing)
 const autoPipEnabledKey = 'auto-pip-enabled';
+
+// New-upload notifications for subscribed channels
+const notifyNewVideosKey = 'notify-new-videos';
+const notifyLastCheckKey = 'notify-last-check';
+const notifySeenVideosKey = 'notify-seen-videos';

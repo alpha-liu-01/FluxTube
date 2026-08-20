@@ -8,6 +8,7 @@ import 'package:fluxtube/core/model/language_model.dart';
 import 'package:fluxtube/core/model/region_model.dart';
 import 'package:fluxtube/core/regions.dart';
 import 'package:fluxtube/generated/l10n.dart';
+import 'package:fluxtube/presentation/settings/widgets/new_video_notification_tile.dart';
 import 'package:go_router/go_router.dart';
 
 List<DropdownMenuItem<String>> _getThemeModes(S locals) => [
@@ -22,6 +23,14 @@ List<DropdownMenuItem<String>> _getThemeModes(S locals) => [
   DropdownMenuItem(
     value: "dark",
     child: Text(locals.themeDark),
+  ),
+  DropdownMenuItem(
+    value: "oled",
+    child: Text(locals.themeOled),
+  ),
+  DropdownMenuItem(
+    value: "dynamic",
+    child: Text(locals.themeDynamic),
   ),
 ];
 
@@ -93,6 +102,7 @@ class CommonSettingsSection extends StatelessWidget {
                           SettingsEvent.changeTheme(
                               themeMode: themeMode.toString()))),
             ),
+            const NewVideoNotificationTile(),
           ],
         );
       },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fluxtube/domain/watch/models/newpipe/newpipe_subtitle.dart';
 import 'package:fluxtube/domain/watch/playback/models/stream_quality_info.dart';
 import 'package:fluxtube/domain/watch/playback/newpipe_stream_helper.dart';
+import 'package:fluxtube/generated/l10n.dart';
 
 /// Settings page enum - exported for direct navigation
 enum SettingsPage {
@@ -12,6 +13,7 @@ enum SettingsPage {
   captions,
   audioTrack,
   resize,
+  sleepTimer,
 }
 
 /// YouTube-like player settings bottom sheet
@@ -34,6 +36,8 @@ class PlayerSettingsSheet extends StatefulWidget {
     this.onAudioTrackChanged,
     this.currentFitMode,
     this.onFitModeChanged,
+    this.sleepTimerMinutes,
+    this.onSleepTimerChanged,
   });
 
   final double currentSpeed;
@@ -52,12 +56,16 @@ class PlayerSettingsSheet extends StatefulWidget {
   final Function(String)? onAudioTrackChanged;
   final String? currentFitMode;
   final Function(String)? onFitModeChanged;
+  final int? sleepTimerMinutes;
+  final Function(int?)? onSleepTimerChanged;
 
   @override
   State<PlayerSettingsSheet> createState() => _PlayerSettingsSheetState();
 }
 
 class _PlayerSettingsSheetState extends State<PlayerSettingsSheet> {
+  S get locals => S.of(context);
+
   late SettingsPage _currentPage;
 
   @override
@@ -111,6 +119,8 @@ class _PlayerSettingsSheetState extends State<PlayerSettingsSheet> {
         return _buildAudioTrackPage();
       case SettingsPage.resize:
         return _buildResizePage();
+      case SettingsPage.sleepTimer:
+        return _buildSleepTimerPage();
     }
   }
 
@@ -167,6 +177,14 @@ class _PlayerSettingsSheetState extends State<PlayerSettingsSheet> {
             title: 'Resize',
             value: _fitModeLabel(widget.currentFitMode ?? 'contain'),
             onTap: () => setState(() => _currentPage = SettingsPage.resize),
+          ),
+
+        if (widget.onSleepTimerChanged != null && !widget.isLive)
+          _buildSettingsTile(
+            icon: CupertinoIcons.timer,
+            title: locals.sleepTimer,
+            value: _sleepTimerLabel(widget.sleepTimerMinutes),
+            onTap: () => setState(() => _currentPage = SettingsPage.sleepTimer),
           ),
 
         const SizedBox(height: 16),
@@ -379,6 +397,112 @@ class _PlayerSettingsSheetState extends State<PlayerSettingsSheet> {
       'fill' => 'Fill',
       _ => 'Fit',
     };
+  }
+
+  String _sleepTimerLabel(int? minutes) {
+    if (minutes == null || minutes == 0) return locals.sleepTimerOff;
+    if (minutes == -1) return locals.sleepTimerEndOfVideo;
+    return locals.sleepTimerMinutesShort(minutes);
+  }
+
+  Widget _buildSleepTimerPage() {
+    return Column(
+      key: const ValueKey('sleep_timer'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildHeader(locals.sleepTimer),
+        const Divider(color: Colors.white12, height: 1),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _sleepOptions.length,
+            itemBuilder: (context, index) {
+              final option = _sleepOptions[index];
+              final mins = option['value'];
+              final isSelected = mins == widget.sleepTimerMinutes;
+              return _buildOptionTile(
+                title: option['label'] as String,
+                isSelected: isSelected,
+                onTap: () {
+                  widget.onSleepTimerChanged?.call(mins);
+                  Navigator.of(context).pop();
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextButton.icon(
+            icon: const Icon(CupertinoIcons.add, size: 18, color: Colors.white70),
+            label: Text(locals.sleepTimerCustom, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            onPressed: () => _showCustomTimerDialog(),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> get _sleepOptions => [
+        {'label': locals.sleepTimerOff, 'value': null},
+        {'label': locals.sleepTimerMinutes(15), 'value': 15},
+        {'label': locals.sleepTimerMinutes(30), 'value': 30},
+        {'label': locals.sleepTimerMinutes(45), 'value': 45},
+        {'label': locals.sleepTimerMinutes(60), 'value': 60},
+        {'label': locals.sleepTimerEndOfVideo, 'value': -1},
+      ];
+
+  Future<void> _showCustomTimerDialog() async {
+    final controller = TextEditingController();
+    final navigator = Navigator.of(context);
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF212121),
+        title: Text(locals.sleepTimerCustomTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: locals.sleepTimerEnterMinutes,
+            hintStyle: TextStyle(color: Colors.white38),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(locals.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              final mins = int.tryParse(controller.text);
+              Navigator.of(ctx).pop(mins);
+            },
+            child: Text(locals.sleepTimerSet),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result != null && result > 0) {
+      widget.onSleepTimerChanged?.call(result);
+      navigator.pop();
+    }
   }
 
   String? _getAudioTrackSubtitle(AudioTrackInfo track) {

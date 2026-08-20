@@ -37,6 +37,7 @@ NewPipeComment _$NewPipeCommentFromJson(Map<String, dynamic> json) =>
       replyCount: (json['replyCount'] as num?)?.toInt(),
       isPinned: json['isPinned'] as bool?,
       isHearted: json['isHearted'] as bool?,
+      isEdited: json['isEdited'] as bool?,
       uploadDate: json['uploadDate'] as String?,
       repliesPage: json['repliesPage'] as String?,
     );
@@ -53,6 +54,7 @@ Map<String, dynamic> _$NewPipeCommentToJson(NewPipeComment instance) =>
       'replyCount': instance.replyCount,
       'isPinned': instance.isPinned,
       'isHearted': instance.isHearted,
+      'isEdited': instance.isEdited,
       'uploadDate': instance.uploadDate,
       'repliesPage': instance.repliesPage,
     };

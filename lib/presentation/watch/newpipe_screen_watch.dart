@@ -8,7 +8,7 @@ import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
-import 'package:fluxtube/core/player/playback_queue_controller.dart';
+import 'package:fluxtube/core/player/playback_queue.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/watch/widgets/newpipe/exoplayer_video_player.dart';
@@ -205,21 +205,20 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
         // This ensures PIP works when navigating from external links
         final watchInfo = state.newPipeWatchResp;
         if (watchInfo.id != null && watchInfo.id!.isNotEmpty) {
-          BlocProvider.of<WatchBloc>(context).add(
-            WatchEvent.setSelectedVideoBasicDetails(
-              details: VideoBasicInfo(
-                id: watchInfo.id!,
-                title: watchInfo.title,
-                thumbnailUrl: watchInfo.thumbnailUrl,
-                channelName: watchInfo.uploaderName,
-                channelId: watchInfo.uploaderUrl?.split('/').last,
-                uploaderVerified: watchInfo.uploaderVerified,
-              ),
-            ),
+          final currentInfo = VideoBasicInfo(
+            id: watchInfo.id!,
+            title: watchInfo.title,
+            thumbnailUrl: watchInfo.thumbnailUrl,
+            channelName: watchInfo.uploaderName,
+            channelId: watchInfo.uploaderUrl?.split('/').last,
+            uploaderVerified: watchInfo.uploaderVerified,
           );
-          PlaybackQueueController.instance.setQueue(
-            currentVideoId: watchInfo.id!,
-            videos: (watchInfo.relatedStreams ?? []).map((related) {
+          BlocProvider.of<WatchBloc>(context).add(
+            WatchEvent.setSelectedVideoBasicDetails(details: currentInfo),
+          );
+          PlaybackQueue().seedFromRelated(
+            current: currentInfo,
+            related: (watchInfo.relatedStreams ?? []).map((related) {
               final id = _videoIdFromUrl(related.url);
               return VideoBasicInfo(
                 id: id,

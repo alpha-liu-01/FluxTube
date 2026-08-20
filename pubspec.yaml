@@ -3,7 +3,7 @@ description: "A YouTube client application."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 0.9.2+13
+version: 0.9.3+14
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
@@ -16,6 +16,7 @@ dependencies:
   dartz: ^0.10.1
   dio: ^5.4.3+1
   dismissible_page: ^1.0.2
+  dynamic_color: ^1.7.0
   easy_debounce: ^2.0.3
   flutter:
     sdk: flutter

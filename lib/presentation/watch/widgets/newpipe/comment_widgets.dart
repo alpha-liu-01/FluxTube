@@ -570,6 +570,10 @@ class _ModernCommentCard extends StatelessWidget {
                           if (comment.uploadDate != null &&
                               comment.uploadDate!.isNotEmpty)
                             Text(
+                              // YouTube already appends "(edited)" to this text
+                              // itself when a comment was edited — isEdited is
+                              // just a boolean derived from that same source, not
+                              // separate information to add on top of it.
                               comment.uploadDate!,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: AppColors.disabled,

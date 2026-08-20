@@ -40,6 +40,7 @@ class AboutSection extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium),
               subtitle: Text(state.version ?? ""),
               leading: const Icon(CupertinoIcons.info),
+              onLongPress: () => context.goNamed('debug'),
             );
           },
         ),

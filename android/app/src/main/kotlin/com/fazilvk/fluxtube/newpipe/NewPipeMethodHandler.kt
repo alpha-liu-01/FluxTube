@@ -318,6 +318,11 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                 var initialVideos: List<Map<String, Any?>> = emptyList()
                 var videosNextPage: String? = null
 
+                android.util.Log.d("NewPipeHandler", "Channel tabs count: ${channelInfo.tabs.size}")
+                channelInfo.tabs.forEach { tab ->
+                    android.util.Log.d("NewPipeHandler", "  Tab: filters=${tab.contentFilters}, url=${tab.url}")
+                }
+
                 if (channelInfo.tabs.isNotEmpty()) {
                     try {
                         // Find the videos tab or use the first tab
@@ -326,15 +331,17 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                         } ?: channelInfo.tabs.firstOrNull()
 
                         if (videosTab != null) {
+                            android.util.Log.d("NewPipeHandler", "Using tab: filters=${videosTab.contentFilters}")
                             val tabExtractor = ServiceList.YouTube.getChannelTabExtractor(videosTab)
                             tabExtractor.fetchPage()
                             val initialPage = tabExtractor.initialPage
+                            android.util.Log.d("NewPipeHandler", "Initial page items count: ${initialPage.items.size}")
                             initialVideos = initialPage.items.map { mapInfoItem(it) }
                             videosNextPage = serializePage(initialPage.nextPage)
+                            android.util.Log.d("NewPipeHandler", "Mapped initial videos count: ${initialVideos.size}")
                         }
                     } catch (tabError: Exception) {
-                        // If tab extraction fails, continue without videos
-                        android.util.Log.w("NewPipeHandler", "Failed to get videos tab: ${tabError.message}")
+                        android.util.Log.e("NewPipeHandler", "Failed to get videos tab: ${tabError.message}", tabError)
                     }
                 }
 
@@ -361,6 +368,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
 
                 android.util.Log.d("NewPipeHandler", "Selected avatar: ${bestAvatar}")
                 android.util.Log.d("NewPipeHandler", "Selected banner: ${bestBanner}")
+                android.util.Log.d("NewPipeHandler", "Channel response: name=${channelInfo.name}, videos=${initialVideos.size}, tabs=${channelInfo.tabs.size}, nextPage=${videosNextPage != null}")
 
                 val response = mapOf(
                     "id" to channelInfo.id,
@@ -465,6 +473,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)
@@ -517,6 +526,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)
@@ -567,6 +577,7 @@ class NewPipeMethodHandler : MethodChannel.MethodCallHandler {
                             "likeCount" to comment.likeCount,
                             "replyCount" to comment.replyCount,
                             "isPinned" to comment.isPinned,
+                            "isEdited" to comment.isEdited,
                             "isHearted" to comment.isHeartedByUploader,
                             "uploadDate" to comment.textualUploadDate,
                             "repliesPage" to serializePage(comment.replies)

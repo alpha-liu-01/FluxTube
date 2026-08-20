@@ -19,7 +19,15 @@ import 'package:fluxtube/domain/watch/playback/models/playback_configuration.dar
 import 'package:fluxtube/domain/watch/playback/models/stream_quality_info.dart';
 import 'package:fluxtube/domain/watch/playback/newpipe_playback_resolver.dart';
 import 'package:fluxtube/domain/watch/playback/newpipe_stream_helper.dart';
+import 'package:fluxtube/core/player/playback_queue.dart';
+import 'package:fluxtube/infrastructure/newpipe/newpipe_channel.dart';
 import 'package:fluxtube/presentation/watch/widgets/player/player_settings_sheet.dart';
+import 'package:fluxtube/presentation/watch/widgets/player/chapter_bar.dart';
+import 'package:fluxtube/presentation/watch/widgets/queue_sheet.dart';
+import 'package:fluxtube/presentation/watch/widgets/cast_button.dart';
+import 'package:fluxtube/domain/watch/models/video_chapter.dart';
+import 'package:fluxtube/generated/l10n.dart';
+import 'package:go_router/go_router.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 
@@ -91,6 +99,11 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
   String? _currentCaptionText;
   String? _currentAudioTrackId;
   List<_CaptionCue> _captionCues = [];
+  bool _isReloadingLiveUrl = false;
+  int? _sleepTimerMinutes;
+  Timer? _sleepTimer;
+  late List<VideoChapter> _chapters;
+  bool _autoAdvanced = false;
   late PlaybackConfiguration _config;
   late List<StreamQualityInfo> _qualities;
   late List<AudioTrackInfo> _audioTracks;
@@ -116,6 +129,10 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
     _speed = widget.initialSpeed != 1.0
         ? widget.initialSpeed
         : (hasPersistedSession ? _globalPlayer.nativeSpeed : 1.0);
+    _chapters = VideoChapter.parseFromDescription(
+      widget.watchInfo.description,
+      durationSeconds: widget.watchInfo.duration,
+    );
     _currentQuality = widget.initialQuality ??
         (hasPersistedSession ? _globalPlayer.nativeQuality : null) ??
         (widget.preferAdaptivePlayback ? 'Auto' : _initialQuality());
@@ -151,6 +168,7 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
   void dispose() {
     _historyTimer?.cancel();
     _hideTimer?.cancel();
+    _sleepTimer?.cancel();
     _saveHistoryPosition();
     _channel?.setMethodCallHandler(null);
     if (!widget.isFullscreen) {
@@ -229,6 +247,52 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
       }
     }
     return resolved;
+  }
+
+  Future<void> _handleLiveUrlExpired() async {
+    if (_isReloadingLiveUrl) return;
+    _isReloadingLiveUrl = true;
+    try {
+      final freshInfo = await NewPipeChannel.getStreamInfo(widget.videoId);
+      final freshHlsUrl = freshInfo.hlsUrl;
+      if (freshHlsUrl != null && freshHlsUrl.isNotEmpty) {
+        _config = _config.copyWith(manifestUrl: freshHlsUrl);
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+            _isBuffering = true;
+          });
+          await _channel?.invokeMethod('load', _sourceParams(keepPosition: false));
+        }
+      }
+    } catch (_) {
+    } finally {
+      _isReloadingLiveUrl = false;
+    }
+  }
+
+  /// [minutes] is a duration, `null`/`0` for off, or `-1` for "end of video".
+  ///
+  /// "End of video" needs no timer — it is a flag that stops autoplay from
+  /// advancing when the current video finishes (see [_handlePlaybackEnded]).
+  void _setSleepTimer(int? minutes) {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    setState(() => _sleepTimerMinutes = minutes);
+    if (minutes == null || minutes == 0 || minutes == -1) return;
+
+    _sleepTimer = Timer(Duration(minutes: minutes), () {
+      if (!mounted) return;
+      if (_isPlaying) _togglePlay();
+      if (!mounted) return;
+      setState(() => _sleepTimerMinutes = null);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(S.of(context).sleepTimerEnded),
+          duration: Duration(seconds: 2),
+        ));
+    });
   }
 
   Map<String, Object?> _sourceParams({
@@ -315,6 +379,12 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
           }
           if (!_isPlaying) {
             _hideTimer?.cancel();
+            if (wasPlaying && !_config.isLive && _durationMs > 1000) {
+              final nearEnd = (_positionMs + 1500) >= _durationMs;
+              if (nearEnd) {
+                _handlePlaybackEnded();
+              }
+            }
           } else if (!wasPlaying && _showControls) {
             _startHideTimer();
           }
@@ -322,10 +392,19 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
         case 'onError':
           final args = Map<String, dynamic>.from(call.arguments as Map);
           if (mounted) {
+            final isPlaylistStuck = args['isPlaylistStuck'] as bool? ?? false;
             setState(() {
               _errorMessage = args['message'] as String? ?? 'Playback failed';
               _isBuffering = false;
             });
+            if (isPlaylistStuck && _config.isLive) {
+              _handleLiveUrlExpired();
+            }
+          }
+          break;
+        case 'onLiveUrlExpired':
+          if (mounted && _config.isLive) {
+            _handleLiveUrlExpired();
           }
           break;
       }
@@ -554,6 +633,8 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
           onAudioTrackChanged: _changeAudioTrack,
           currentFitMode: _fitMode,
           onFitModeChanged: _changeFitMode,
+          sleepTimerMinutes: _sleepTimerMinutes,
+          onSleepTimerChanged: _setSleepTimer,
         ),
       ),
     );
@@ -674,6 +755,95 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
       speed: _speed,
       fitMode: _fitMode,
     ));
+  }
+
+  /// Picks a stream a Cast receiver can play on its own.
+  ///
+  /// Local playback uses adaptive video-only tracks paired with a separate audio
+  /// track, which a receiver cannot assemble. Live streams cast as HLS;
+  /// on-demand video casts as the highest-resolution progressive (muxed) MP4.
+  /// Returns null when neither exists, so the button reports a failure rather
+  /// than sending something unplayable.
+  CastMedia? _buildCastMedia() {
+    final info = widget.watchInfo;
+    final isLive = _config.isLive;
+
+    String? url;
+    var contentType = 'video/mp4';
+
+    if (isLive) {
+      url = info.hlsUrl;
+      contentType = 'application/x-mpegURL';
+    } else {
+      final progressive = (info.videoStreams ?? [])
+          .where((s) => (s.url ?? '').isNotEmpty)
+          .toList();
+      if (progressive.isNotEmpty) {
+        // Highest resolution wins; quality reads like "720p".
+        progressive.sort((a, b) =>
+            _resolutionOf(b.quality).compareTo(_resolutionOf(a.quality)));
+        url = progressive.first.url;
+        final mime = progressive.first.mimeType;
+        if (mime != null && mime.isNotEmpty) contentType = mime;
+      } else if ((info.hlsUrl ?? '').isNotEmpty) {
+        url = info.hlsUrl;
+        contentType = 'application/x-mpegURL';
+      }
+    }
+
+    if (url == null || url.isEmpty) return null;
+
+    return CastMedia(
+      url: url,
+      title: info.title,
+      subtitle: info.uploaderName,
+      imageUrl: info.thumbnailUrl,
+      contentType: contentType,
+      isLive: isLive,
+      positionMs: isLive ? 0 : _positionMs,
+    );
+  }
+
+  static int _resolutionOf(String? quality) {
+    if (quality == null) return 0;
+    final match = RegExp(r'(\d{3,4})').firstMatch(quality);
+    return int.tryParse(match?.group(1) ?? '') ?? 0;
+  }
+
+  void _showQueueSheet() {
+    _hideTimer?.cancel();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const QueueSheet(),
+    ).then((_) => _startHideTimer());
+  }
+
+  void _handlePlaybackEnded() {
+    if (!mounted || _autoAdvanced) return;
+    // "End of video" sleep timer: stop here instead of advancing.
+    if (_sleepTimerMinutes == -1) {
+      setState(() => _sleepTimerMinutes = null);
+      return;
+    }
+    final currentId = widget.watchInfo.id;
+    final next = PlaybackQueue().nextAfter(currentId);
+    if (next == null || next.id.isEmpty || next.id == currentId) return;
+
+    _autoAdvanced = true;
+    PlaybackQueue().syncCurrent(next.id);
+    BlocProvider.of<WatchBloc>(context)
+        .add(WatchEvent.setSelectedVideoBasicDetails(details: next));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // goNamed, not pushNamed: autoplay replaces the current watch screen so a
+      // long autoplay chain does not pile up back-stack entries.
+      context.goNamed('watch', pathParameters: {
+        'videoId': next.id,
+        'channelId': next.channelId ?? '',
+      });
+    });
   }
 
   Future<void> _saveHistoryPosition() async {
@@ -922,6 +1092,17 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
                 ],
               ),
             ),
+            if (_chapters.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ChapterBar(
+                  chapters: _chapters,
+                  positionSeconds: (_scrubMs ?? _positionMs) ~/ 1000,
+                  durationSeconds: _durationMs ~/ 1000,
+                  onChapterTap: (seconds) => _seekTo(seconds * 1000),
+                ),
+              ),
+            const SizedBox(height: 4),
             _buildBottomActions(),
           ],
         ),
@@ -1022,7 +1203,20 @@ class _NewPipeExoPlayerState extends State<NewPipeExoPlayer> {
               ),
             ),
             IconButton(
-              tooltip: 'Settings',
+              tooltip: S.of(context).queue,
+              onPressed: _showQueueSheet,
+              icon: const Icon(Icons.list, color: Colors.white),
+            ),
+            CastButton(
+              mediaProvider: _buildCastMedia,
+              onCastStarted: () {
+                // The receiver is playing now; stop the local copy so audio
+                // does not come out of both.
+                if (_isPlaying) _togglePlay();
+              },
+            ),
+            IconButton(
+              tooltip: S.of(context).settings,
               onPressed: _openSettings,
               icon: const Icon(CupertinoIcons.gear_alt, color: Colors.white),
             ),

@@ -11,6 +11,9 @@ import 'package:fluxtube/presentation/settings/sub_screens/screen_instances.dart
 import 'package:fluxtube/presentation/settings/sub_screens/screen_language.dart';
 import 'package:fluxtube/presentation/settings/sub_screens/screen_regions.dart';
 import 'package:fluxtube/presentation/settings/sub_screens/screen_translators.dart';
+import 'package:fluxtube/presentation/settings/sub_screens/screen_debug.dart';
+import 'package:fluxtube/presentation/playlist/screen_local_playlists.dart';
+import 'package:fluxtube/presentation/playlist/screen_playlist_detail.dart';
 import 'package:fluxtube/presentation/splash/screen_splash.dart';
 import 'package:fluxtube/presentation/watch/screen_watch.dart';
 import 'package:go_router/go_router.dart';
@@ -76,6 +79,29 @@ final GoRouter router = GoRouter(
           path: 'translators',
           builder: (BuildContext context, GoRouterState state) {
             return const ScreenTranslators();
+          },
+        ),
+        GoRoute(
+          name: 'debug',
+          path: 'debug',
+          builder: (BuildContext context, GoRouterState state) {
+            return const ScreenDebug();
+          },
+        ),
+        GoRoute(
+          name: 'localPlaylists',
+          path: 'local-playlists',
+          builder: (BuildContext context, GoRouterState state) {
+            return const ScreenLocalPlaylists();
+          },
+        ),
+        GoRoute(
+          name: 'playlistDetail',
+          path: 'playlist-detail/:playlistId',
+          builder: (BuildContext context, GoRouterState state) {
+            return ScreenPlaylistDetail(
+              playlistId: state.pathParameters['playlistId']!,
+            );
           },
         ),
         GoRoute(

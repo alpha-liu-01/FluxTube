@@ -31,89 +31,101 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "about": MessageLookupByLibrary.simpleMessage("О приложении"),
-        "canada": MessageLookupByLibrary.simpleMessage("Канада"),
-        "channelSubscribers": m0,
-        "commentAuthorNotFound":
-            MessageLookupByLibrary.simpleMessage("Не найден"),
-        "commonSettingsTitle": MessageLookupByLibrary.simpleMessage("Общие"),
-        "defaultQuality":
-            MessageLookupByLibrary.simpleMessage("Качество по умолчанию"),
-        "developer": MessageLookupByLibrary.simpleMessage("Разработчик"),
-        "disablePipPlayer":
-            MessageLookupByLibrary.simpleMessage("Disable PIP player"),
-        "disableVideoHistory": MessageLookupByLibrary.simpleMessage(
-            "Отключить историю просмотров"),
-        "distractionFree":
-            MessageLookupByLibrary.simpleMessage("Отсекая лишнее"),
-        "enableHlsPlayerDescription": MessageLookupByLibrary.simpleMessage(
-            "Переключит на проигрыватель HLS, поддерживающий больше форматов. Отключите при ошибках."),
-        "france": MessageLookupByLibrary.simpleMessage("Франция"),
-        "hideComments":
-            MessageLookupByLibrary.simpleMessage("Скрыть коментарии"),
-        "hideCommentsButtonFromWatchScreen":
-            MessageLookupByLibrary.simpleMessage(
-                "Убирает кнопку показа коментариев с экрана просмотра."),
-        "hideRelated": MessageLookupByLibrary.simpleMessage("Скрыть похожие"),
-        "hideRelatedVideosFromWatchScreen":
-            MessageLookupByLibrary.simpleMessage(
-                "Убирает ленту похожих видео с экрана просмотра."),
-        "history": MessageLookupByLibrary.simpleMessage("История"),
-        "hlsPlayer": MessageLookupByLibrary.simpleMessage("Проигрыватель HLS"),
-        "home": MessageLookupByLibrary.simpleMessage("Главная"),
-        "includeTitle":
-            MessageLookupByLibrary.simpleMessage("Включая название"),
-        "india": MessageLookupByLibrary.simpleMessage("Индия"),
-        "instances": MessageLookupByLibrary.simpleMessage("Зеркала"),
-        "language": MessageLookupByLibrary.simpleMessage("Язык"),
-        "netherlands": MessageLookupByLibrary.simpleMessage("Нидерланды"),
-        "noCommentsFound":
-            MessageLookupByLibrary.simpleMessage("No Comments Found"),
-        "noUploadDate": MessageLookupByLibrary.simpleMessage("Без даты"),
-        "noUploaderName": MessageLookupByLibrary.simpleMessage("Безымянный"),
-        "noVideoAvailableChangedToHls": MessageLookupByLibrary.simpleMessage(
-            "Нет доступных форматов, переход на HLS"),
-        "noVideoDescription":
-            MessageLookupByLibrary.simpleMessage("Без описания"),
-        "noVideoTitle": MessageLookupByLibrary.simpleMessage("Неназванное"),
-        "readMoreText": MessageLookupByLibrary.simpleMessage("Раскрыть"),
-        "region": MessageLookupByLibrary.simpleMessage("Регион"),
-        "relatedTitle": MessageLookupByLibrary.simpleMessage("Похожие"),
-        "repliesPlural": m1,
-        "retrieveDislikeCounts": MessageLookupByLibrary.simpleMessage(
-            "Запрашивать количество дизлайков"),
-        "retrieveDislikes":
-            MessageLookupByLibrary.simpleMessage("Вернуть дизлайки"),
-        "retry": MessageLookupByLibrary.simpleMessage("Повторить"),
-        "saved": MessageLookupByLibrary.simpleMessage("Сохранено"),
-        "savedVideosTitle":
-            MessageLookupByLibrary.simpleMessage("Сохранённые видео"),
-        "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
-        "share": MessageLookupByLibrary.simpleMessage("Поделиться"),
-        "showLessText": MessageLookupByLibrary.simpleMessage("Скрыть"),
-        "subscribe": MessageLookupByLibrary.simpleMessage("Подписаться"),
-        "swipeDownToDismissDisabled": MessageLookupByLibrary.simpleMessage(
-            "\'Swipe down to dismiss\' disabled"),
-        "swipeUpToDismissEnabled": MessageLookupByLibrary.simpleMessage(
-            "\'Swipe up to dismiss\' enabled"),
-        "switchRegion": MessageLookupByLibrary.simpleMessage(
-            "Возможно, стоит сменить регион, чтобы улучшить результат."),
-        "theme": MessageLookupByLibrary.simpleMessage("Оформление"),
-        "thereIsNoSavedOrHistoryVideos": MessageLookupByLibrary.simpleMessage(
-            "Сохранённых/просмотренных видео нет"),
-        "thereIsNoSavedVideos":
-            MessageLookupByLibrary.simpleMessage("Сохранённых видео нет"),
-        "translators": MessageLookupByLibrary.simpleMessage("Переводчики"),
-        "trending": MessageLookupByLibrary.simpleMessage("Тренды"),
-        "unitedKingdom":
-            MessageLookupByLibrary.simpleMessage("Соединённое королевство"),
-        "unitedStates":
-            MessageLookupByLibrary.simpleMessage("Соединённые штаты Америки"),
-        "unknown": MessageLookupByLibrary.simpleMessage("неизвестно"),
-        "unknownQuality":
-            MessageLookupByLibrary.simpleMessage("Качество не опознано"),
-        "version": MessageLookupByLibrary.simpleMessage("Версия"),
-        "video": MessageLookupByLibrary.simpleMessage("Видео"),
-        "videoViews": m2
-      };
+    "about": MessageLookupByLibrary.simpleMessage("О приложении"),
+    "canada": MessageLookupByLibrary.simpleMessage("Канада"),
+    "channelSubscribers": m0,
+    "commentAuthorNotFound": MessageLookupByLibrary.simpleMessage("Не найден"),
+    "commonSettingsTitle": MessageLookupByLibrary.simpleMessage("Общие"),
+    "defaultQuality": MessageLookupByLibrary.simpleMessage(
+      "Качество по умолчанию",
+    ),
+    "developer": MessageLookupByLibrary.simpleMessage("Разработчик"),
+    "disablePipPlayer": MessageLookupByLibrary.simpleMessage(
+      "Disable PIP player",
+    ),
+    "disableVideoHistory": MessageLookupByLibrary.simpleMessage(
+      "Отключить историю просмотров",
+    ),
+    "distractionFree": MessageLookupByLibrary.simpleMessage("Отсекая лишнее"),
+    "enableHlsPlayerDescription": MessageLookupByLibrary.simpleMessage(
+      "Переключит на проигрыватель HLS, поддерживающий больше форматов. Отключите при ошибках.",
+    ),
+    "france": MessageLookupByLibrary.simpleMessage("Франция"),
+    "hideComments": MessageLookupByLibrary.simpleMessage("Скрыть коментарии"),
+    "hideCommentsButtonFromWatchScreen": MessageLookupByLibrary.simpleMessage(
+      "Убирает кнопку показа коментариев с экрана просмотра.",
+    ),
+    "hideRelated": MessageLookupByLibrary.simpleMessage("Скрыть похожие"),
+    "hideRelatedVideosFromWatchScreen": MessageLookupByLibrary.simpleMessage(
+      "Убирает ленту похожих видео с экрана просмотра.",
+    ),
+    "history": MessageLookupByLibrary.simpleMessage("История"),
+    "hlsPlayer": MessageLookupByLibrary.simpleMessage("Проигрыватель HLS"),
+    "home": MessageLookupByLibrary.simpleMessage("Главная"),
+    "includeTitle": MessageLookupByLibrary.simpleMessage("Включая название"),
+    "india": MessageLookupByLibrary.simpleMessage("Индия"),
+    "instances": MessageLookupByLibrary.simpleMessage("Зеркала"),
+    "language": MessageLookupByLibrary.simpleMessage("Язык"),
+    "netherlands": MessageLookupByLibrary.simpleMessage("Нидерланды"),
+    "noCommentsFound": MessageLookupByLibrary.simpleMessage(
+      "No Comments Found",
+    ),
+    "noUploadDate": MessageLookupByLibrary.simpleMessage("Без даты"),
+    "noUploaderName": MessageLookupByLibrary.simpleMessage("Безымянный"),
+    "noVideoAvailableChangedToHls": MessageLookupByLibrary.simpleMessage(
+      "Нет доступных форматов, переход на HLS",
+    ),
+    "noVideoDescription": MessageLookupByLibrary.simpleMessage("Без описания"),
+    "noVideoTitle": MessageLookupByLibrary.simpleMessage("Неназванное"),
+    "readMoreText": MessageLookupByLibrary.simpleMessage("Раскрыть"),
+    "region": MessageLookupByLibrary.simpleMessage("Регион"),
+    "relatedTitle": MessageLookupByLibrary.simpleMessage("Похожие"),
+    "repliesPlural": m1,
+    "retrieveDislikeCounts": MessageLookupByLibrary.simpleMessage(
+      "Запрашивать количество дизлайков",
+    ),
+    "retrieveDislikes": MessageLookupByLibrary.simpleMessage(
+      "Вернуть дизлайки",
+    ),
+    "retry": MessageLookupByLibrary.simpleMessage("Повторить"),
+    "saved": MessageLookupByLibrary.simpleMessage("Сохранено"),
+    "savedVideosTitle": MessageLookupByLibrary.simpleMessage(
+      "Сохранённые видео",
+    ),
+    "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
+    "share": MessageLookupByLibrary.simpleMessage("Поделиться"),
+    "showLessText": MessageLookupByLibrary.simpleMessage("Скрыть"),
+    "subscribe": MessageLookupByLibrary.simpleMessage("Подписаться"),
+    "swipeDownToDismissDisabled": MessageLookupByLibrary.simpleMessage(
+      "\'Swipe down to dismiss\' disabled",
+    ),
+    "swipeUpToDismissEnabled": MessageLookupByLibrary.simpleMessage(
+      "\'Swipe up to dismiss\' enabled",
+    ),
+    "switchRegion": MessageLookupByLibrary.simpleMessage(
+      "Возможно, стоит сменить регион, чтобы улучшить результат.",
+    ),
+    "theme": MessageLookupByLibrary.simpleMessage("Оформление"),
+    "thereIsNoSavedOrHistoryVideos": MessageLookupByLibrary.simpleMessage(
+      "Сохранённых/просмотренных видео нет",
+    ),
+    "thereIsNoSavedVideos": MessageLookupByLibrary.simpleMessage(
+      "Сохранённых видео нет",
+    ),
+    "translators": MessageLookupByLibrary.simpleMessage("Переводчики"),
+    "trending": MessageLookupByLibrary.simpleMessage("Тренды"),
+    "unitedKingdom": MessageLookupByLibrary.simpleMessage(
+      "Соединённое королевство",
+    ),
+    "unitedStates": MessageLookupByLibrary.simpleMessage(
+      "Соединённые штаты Америки",
+    ),
+    "unknown": MessageLookupByLibrary.simpleMessage("неизвестно"),
+    "unknownQuality": MessageLookupByLibrary.simpleMessage(
+      "Качество не опознано",
+    ),
+    "version": MessageLookupByLibrary.simpleMessage("Версия"),
+    "video": MessageLookupByLibrary.simpleMessage("Видео"),
+    "videoViews": m2,
+  };
 }

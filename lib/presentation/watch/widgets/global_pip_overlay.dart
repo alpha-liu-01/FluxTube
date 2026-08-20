@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
-import 'package:fluxtube/core/player/playback_queue_controller.dart';
+import 'package:fluxtube/core/player/playback_queue.dart';
 import 'package:fluxtube/presentation/routes/app_routes.dart';
 import 'package:fluxtube/presentation/watch/widgets/pip_video_widget.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -46,7 +46,7 @@ class _GlobalPipOverlayState extends State<GlobalPipOverlay> {
 
   void _playNextFromQueue() {
     final current = context.read<WatchBloc>().state.selectedVideoBasicDetails;
-    final next = PlaybackQueueController.instance.nextAfter(current?.id);
+    final next = PlaybackQueue().nextAfter(current?.id);
     if (next == null) return;
 
     context

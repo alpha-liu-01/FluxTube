@@ -39,7 +39,9 @@ dependencies:
   lottie: ^3.1.2
   package_info_plus: ^9.0.0
   path_provider: ^2.1.3
-  receive_sharing_intent: ^1.8.1
+  # Pinned: 1.9.0 raises its own compileSdk to 37, a preview Android SDK level
+  # not yet available as a stable "android-37" platform via sdkmanager.
+  receive_sharing_intent: 1.8.1
   rich_readmore: ^1.1.1
   share_plus: ^12.0.1
   file_picker: ^8.0.0

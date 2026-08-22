@@ -130,7 +130,7 @@ flutter {
 }
 
 dependencies {
-    implementation platform("org.jetbrains.kotlin:kotlin-bom:2.1.0")
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:2.4.10")
 
     // Core library desugaring for NewPipe Extractor (Java 8+ APIs on older Android)
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.3'

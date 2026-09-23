@@ -1,0 +1,159 @@
+name: Desktop Draft Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux x64 archive
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux desktop packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang \
+            cmake \
+            curl \
+            git \
+            libgtk-3-dev \
+            liblzma-dev \
+            libmpv-dev \
+            make \
+            ninja-build \
+            pkg-config \
+            unzip \
+            xz-utils \
+            zip
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.47.1"
+          cache: true
+
+      - name: Analyze
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Build Linux archive
+        run: packaging/linux/build-release.sh
+
+      - name: Upload Linux archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: dist/fluxtube-*-linux-x64.tar.gz
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows x64 archive
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.47.1"
+          cache: true
+
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build Windows archive
+        shell: pwsh
+        run: |
+          flutter config --no-analytics --enable-windows-desktop
+          flutter pub get
+          flutter build windows --release
+          $version = "${{ steps.app_version.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $archive = "dist/fluxtube-$version-windows-x64.zip"
+          if (Test-Path $archive) { Remove-Item $archive }
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $archive
+          Get-Item $archive | Format-List FullName, Length
+
+      - name: Upload Windows archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/fluxtube-*-windows-x64.zip
+          if-no-files-found: error
+
+  release:
+    name: Create draft release
+    needs:
+      - build-linux
+      - build-windows
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-x64"
+          path: dist
+          merge-multiple: true
+
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          tag="v${version//+/-}-desktop-run-${GITHUB_RUN_NUMBER}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          ls -lah dist
+
+      - name: Create release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "Automated desktop build for ${GITHUB_SHA}."
+            echo
+            echo "Included archives:"
+            find dist -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -printf '- %f\n' | sort
+            echo
+            echo "The Linux archive needs libmpv installed at runtime. ffmpeg is required for merged downloads."
+            echo
+            echo "Recent changes:"
+            git log --pretty='- %s (%h)' -20
+          } > RELEASE_NOTES.md
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ steps.app_version.outputs.tag }}" dist/* \
+            --draft \
+            --title "FluxTube ${{ steps.app_version.outputs.version }} desktop" \
+            --notes-file RELEASE_NOTES.md

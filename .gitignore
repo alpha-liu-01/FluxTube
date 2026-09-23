@@ -33,6 +33,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Desktop release archives
+/dist/
+
 # Symbolication related
 app.*.symbols
 
@@ -57,3 +60,6 @@ android/app/key.jks
 
 .gradle/
 .vscode/
+
+/.cursor/
+/doc/private/

@@ -3,13 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:fluxtube/domain/channel/models/newpipe/newpipe_channel_resp.dart';
+import 'package:fluxtube/infrastructure/newpipe/newpipe_sidecar.dart';
 import 'package:fluxtube/domain/search/models/newpipe/newpipe_search_resp.dart';
 import 'package:fluxtube/domain/trending/models/newpipe/newpipe_trending_resp.dart';
 import 'package:fluxtube/domain/watch/models/newpipe/newpipe_comments_resp.dart';
 import 'package:fluxtube/domain/watch/models/newpipe/newpipe_watch_resp.dart';
 
-/// Platform channel for communicating with NewPipe Extractor on Android.
-/// This service is Android-only. On iOS, it returns unavailable.
+/// NewPipe Extractor bridge. Android uses the Kotlin method channel.
+/// Other platforms use the desktop sidecar process.
 class NewPipeChannel {
   static const _channel = MethodChannel('com.fazilvk.fluxtube/newpipe');
 
@@ -18,10 +19,14 @@ class NewPipeChannel {
   static const _cacheTtl = Duration(minutes: 5);
 
   /// Check if NewPipe Extractor is available on this platform.
-  /// Returns true on Android, false on iOS/other platforms.
   static Future<bool> get isAvailable async {
     if (!Platform.isAndroid) {
-      return false;
+      try {
+        await NewPipeSidecar.instance.ensureStarted();
+        return NewPipeSidecar.instance.isRunning;
+      } catch (_) {
+        return false;
+      }
     }
     try {
       final result = await _channel.invokeMethod<bool>('isAvailable');
@@ -33,19 +38,27 @@ class NewPipeChannel {
     }
   }
 
-  /// Get video stream info including metadata and stream URLs
-  static Future<NewPipeWatchResp> getStreamInfo(String videoId) async {
+  static Future<String> _invoke(String method, Map<String, dynamic> args) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getStreamInfo',
-        {'id': videoId},
-      );
+      final String? result = Platform.isAndroid
+          ? await _channel.invokeMethod<String>(method, args)
+          : await NewPipeSidecar.instance.invoke(method, args);
       if (result == null) {
         throw PlatformException(
           code: 'NULL_RESULT',
           message: 'No data returned from NewPipe Extractor',
         );
       }
+      return result;
+    } on NewPipeSidecarException catch (error) {
+      throw PlatformException(code: error.code, message: error.message);
+    }
+  }
+
+  /// Get video stream info including metadata and stream URLs
+  static Future<NewPipeWatchResp> getStreamInfo(String videoId) async {
+    try {
+      final result = await _invoke('getStreamInfo', {'id': videoId});
       final json = jsonDecode(result) as Map<String, dynamic>;
       final resp = NewPipeWatchResp.fromJson(json);
       // Cache the result
@@ -67,16 +80,7 @@ class NewPipeChannel {
     }
 
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getStreamInfoFast',
-        {'id': videoId},
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getStreamInfoFast', {'id': videoId});
       final json = jsonDecode(result) as Map<String, dynamic>;
       final resp = NewPipeWatchResp.fromJson(json);
       // Cache the result
@@ -128,16 +132,7 @@ class NewPipeChannel {
   /// Get trending videos for a specific region
   static Future<List<NewPipeTrendingResp>> getTrending(String region) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getTrending',
-        {'region': region},
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getTrending', {'region': region});
       final json = jsonDecode(result) as Map<String, dynamic>;
       final videos = json['videos'] as List<dynamic>?;
       if (videos == null) return [];
@@ -156,20 +151,11 @@ class NewPipeChannel {
     String? nextPage,
   }) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'search',
-        {
-          'query': query,
-          'filter': filter,
-          if (nextPage != null) 'nextPage': nextPage,
-        },
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('search', {
+        'query': query,
+        'filter': filter,
+        if (nextPage != null) 'nextPage': nextPage,
+      });
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeSearchResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -180,11 +166,7 @@ class NewPipeChannel {
   /// Get search suggestions for autocomplete
   static Future<List<String>> getSearchSuggestions(String query) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getSearchSuggestions',
-        {'query': query},
-      );
-      if (result == null) return [];
+      final result = await _invoke('getSearchSuggestions', {'query': query});
       final json = jsonDecode(result) as List<dynamic>;
       return json.map((s) => s.toString()).toList();
     } on PlatformException catch (e) {
@@ -195,16 +177,7 @@ class NewPipeChannel {
   /// Get channel info and videos
   static Future<NewPipeChannelResp> getChannel(String channelId) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getChannel',
-        {'id': channelId},
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getChannel', {'id': channelId});
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeChannelResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -215,16 +188,7 @@ class NewPipeChannel {
   /// Get comments for a video
   static Future<NewPipeCommentsResp> getComments(String videoId) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getComments',
-        {'id': videoId},
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getComments', {'id': videoId});
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeCommentsResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -238,19 +202,10 @@ class NewPipeChannel {
     required String nextPage,
   }) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getMoreComments',
-        {
-          'id': videoId,
-          'nextPage': nextPage,
-        },
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getMoreComments', {
+        'id': videoId,
+        'nextPage': nextPage,
+      });
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeCommentsResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -264,19 +219,10 @@ class NewPipeChannel {
     required String repliesPage,
   }) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getCommentReplies',
-        {
-          'id': videoId,
-          'repliesPage': repliesPage,
-        },
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getCommentReplies', {
+        'id': videoId,
+        'repliesPage': repliesPage,
+      });
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeCommentsResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -291,20 +237,11 @@ class NewPipeChannel {
     List<String>? contentFilters,
   }) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getChannelTab',
-        {
-          'url': tabUrl,
-          if (tabId != null) 'id': tabId,
-          if (contentFilters != null) 'contentFilters': contentFilters,
-        },
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getChannelTab', {
+        'url': tabUrl,
+        if (tabId != null) 'id': tabId,
+        if (contentFilters != null) 'contentFilters': contentFilters,
+      });
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeChannelResp.fromJson(json);
     } on PlatformException catch (e) {
@@ -320,21 +257,12 @@ class NewPipeChannel {
     List<String>? contentFilters,
   }) async {
     try {
-      final result = await _channel.invokeMethod<String>(
-        'getChannelTab',
-        {
-          'url': tabUrl,
-          if (tabId != null) 'id': tabId,
-          if (contentFilters != null) 'contentFilters': contentFilters,
-          'nextPage': nextPage,
-        },
-      );
-      if (result == null) {
-        throw PlatformException(
-          code: 'NULL_RESULT',
-          message: 'No data returned from NewPipe Extractor',
-        );
-      }
+      final result = await _invoke('getChannelTab', {
+        'url': tabUrl,
+        if (tabId != null) 'id': tabId,
+        if (contentFilters != null) 'contentFilters': contentFilters,
+        'nextPage': nextPage,
+      });
       final json = jsonDecode(result) as Map<String, dynamic>;
       return NewPipeChannelResp.fromJson(json);
     } on PlatformException catch (e) {

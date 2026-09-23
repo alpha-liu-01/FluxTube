@@ -36,6 +36,13 @@ migrate_working_dir/
 # Desktop release archives
 /dist/
 
+# NewPipe spike build output. Sources and the Gradle wrapper stay tracked.
+packaging/newpipe-spike/build/
+packaging/newpipe-spike/.gradle/
+
+# Xcode junk. Not used by the Windows or Linux Actions builds.
+**/DerivedData/**
+
 # Symbolication related
 app.*.symbols
 
@@ -61,5 +68,8 @@ android/app/key.jks
 .gradle/
 .vscode/
 
+# Local-only. The Windows job is .github/workflows/desktop-draft-release.yml
+# and runs on a push to main. third_party/media_kit_video stays tracked:
+# pubspec.yaml overrides media_kit_video to that path.
 /.cursor/
 /doc/private/

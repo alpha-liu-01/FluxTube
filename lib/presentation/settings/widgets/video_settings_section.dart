@@ -21,30 +21,27 @@ List<DropdownMenuItem<String>> _getQualities(S locals) => [
 List<DropdownMenuItem<YouTubeServices>> _getServices(S locals) {
   final services = <DropdownMenuItem<YouTubeServices>>[];
 
-  // NewPipe is only available on Android (recommended)
-  if (Platform.isAndroid) {
-    services.add(DropdownMenuItem(
-      value: YouTubeServices.newpipe,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(locals.serviceNewPipe),
-          const SizedBox(width: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              '★',
-              style: TextStyle(fontSize: 10, color: Colors.green),
-            ),
+  services.add(DropdownMenuItem(
+    value: YouTubeServices.newpipe,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(locals.serviceNewPipe),
+        const SizedBox(width: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(4),
           ),
-        ],
-      ),
-    ));
-  }
+          child: const Text(
+            '★',
+            style: TextStyle(fontSize: 10, color: Colors.green),
+          ),
+        ),
+      ],
+    ),
+  ));
 
   services.addAll([
     DropdownMenuItem(value: YouTubeServices.piped, child: Text(locals.servicePiped)),

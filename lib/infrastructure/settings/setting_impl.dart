@@ -73,9 +73,7 @@ class SettingImpl implements SettingsService {
       {"name": instanceApiUrl, "default": BaseUrl.kBaseUrl},
       {
         "name": youtubeService,
-        "default": Platform.isAndroid
-            ? YouTubeServices.newpipe.name
-            : YouTubeServices.piped.name
+        "default": YouTubeServices.newpipe.name
       },
       {"name": pipDisabled, "default": "false"},
       {"name": homeFeedModeKey, "default": HomeFeedMode.feedOrTrending.name},

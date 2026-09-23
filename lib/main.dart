@@ -14,6 +14,7 @@ import 'package:fluxtube/core/app_theme.dart';
 import 'package:fluxtube/core/locals.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
 import 'package:fluxtube/infrastructure/download/download_notification_service.dart';
+import 'package:fluxtube/infrastructure/newpipe/newpipe_sidecar.dart';
 import 'package:fluxtube/infrastructure/settings/setting_impl.dart';
 import 'package:fluxtube/presentation/routes/app_routes.dart';
 import 'package:fluxtube/presentation/routes/bloc_observer.dart';
@@ -80,6 +81,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     // Dispose the global player when app is closing
     GlobalPlayerController().disposePlayer();
+    NewPipeSidecar.instance.shutdown();
     super.dispose();
   }
 
@@ -89,6 +91,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // When app is detached (being destroyed), stop the player to prevent crash
     if (state == AppLifecycleState.detached) {
       GlobalPlayerController().disposePlayer();
+      NewPipeSidecar.instance.shutdown();
     }
     // Returning to the foreground is the only chance to poll for new uploads,
     // since there is no background job. The check throttles itself.

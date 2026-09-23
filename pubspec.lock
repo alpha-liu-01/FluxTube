@@ -872,10 +872,9 @@ packages:
   media_kit_video:
     dependency: "direct main"
     description:
-      name: media_kit_video
-      sha256: "813858c3fe84eb46679eb698695f60665e2bfbef757766fac4d2e683f926e15a"
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/media_kit_video"
+      relative: true
+    source: path
     version: "1.3.1"
   meta:
     dependency: transitive

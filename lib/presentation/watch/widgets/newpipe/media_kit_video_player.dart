@@ -17,6 +17,13 @@ import 'package:fluxtube/presentation/watch/widgets/player/player_controls_overl
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+/// Same headers the NewPipe spike used to get mpv to play a googlevideo URL.
+const _newPipePlaybackHeaders = {
+  'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Referer': 'https://www.youtube.com/',
+};
+
 class NewPipeMediaKitPlayer extends StatefulWidget {
   const NewPipeMediaKitPlayer({
     super.key,
@@ -389,13 +396,7 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
         case MediaSourceType.progressive:
           // Muxed stream (has audio, ≤360p)
           await _player.open(
-            Media(
-              config.videoUrl!,
-              httpHeaders: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              },
-            ),
+            Media(config.videoUrl!, httpHeaders: _newPipePlaybackHeaders),
             play: false,
           );
           debugPrint('Opened progressive stream');
@@ -407,13 +408,7 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
 
           // First open video - don't wait for ready here, just open
           await _player.open(
-            Media(
-              config.videoUrl!,
-              httpHeaders: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              },
-            ),
+            Media(config.videoUrl!, httpHeaders: _newPipePlaybackHeaders),
             play: false,
           );
           debugPrint('Opening merging stream');
@@ -422,7 +417,8 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
           if (!mounted) return;
 
           if (audioUrl != null) {
-            // Set audio track
+            // Register headers for this URI before mpv loads the external track.
+            Media(audioUrl, httpHeaders: _newPipePlaybackHeaders);
             try {
               await _player.setAudioTrack(
                 AudioTrack.uri(audioUrl),
@@ -443,13 +439,19 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
 
         case MediaSourceType.hls:
           // HLS stream - fast initialization, no separate wait needed
-          await _player.open(Media(config.manifestUrl!), play: false);
+          await _player.open(
+            Media(config.manifestUrl!, httpHeaders: _newPipePlaybackHeaders),
+            play: false,
+          );
           debugPrint('Opened HLS stream');
           break;
 
         case MediaSourceType.dash:
           // DASH manifest - fast initialization, no separate wait needed
-          await _player.open(Media(config.manifestUrl!), play: false);
+          await _player.open(
+            Media(config.manifestUrl!, httpHeaders: _newPipePlaybackHeaders),
+            play: false,
+          );
           debugPrint('Opened DASH stream');
           break;
       }

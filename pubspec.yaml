@@ -71,6 +71,10 @@ dev_dependencies:
   injectable_generator: ^2.6.2
   drift_dev: ^2.22.1
 
+dependency_overrides:
+  media_kit_video:
+    path: third_party/media_kit_video
+
 flutter:
 
   uses-material-design: true

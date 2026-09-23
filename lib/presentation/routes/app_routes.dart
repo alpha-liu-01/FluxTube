@@ -19,7 +19,10 @@ import 'package:fluxtube/presentation/watch/screen_watch.dart';
 import 'package:go_router/go_router.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/',
+  initialLocation: const String.fromEnvironment(
+    'FLUXTUBE_INITIAL_ROUTE',
+    defaultValue: '/',
+  ),
   routes: <RouteBase>[
     GoRoute(
       path: '/',

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=FluxTube
+Comment=Watch videos
+Exec=fluxtube
+Icon=fluxtube
+Categories=AudioVideo;Video;Player;
+StartupNotify=true
+Terminal=false

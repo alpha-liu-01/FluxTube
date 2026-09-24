@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -66,17 +65,8 @@ class GlobalPlayerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Linux hardware textures stay empty under Impeller even when the FBO is
-  /// created on Flutter's OpenGL ES context. Software textures are the
-  /// fallback on Linux and Windows. Android keeps the hardware texture.
   VideoController _createVideoController(Player player) {
-    final softwareTexture = Platform.isLinux || Platform.isWindows;
-    return VideoController(
-      player,
-      configuration: VideoControllerConfiguration(
-        enableHardwareAcceleration: !softwareTexture,
-      ),
-    );
+    return VideoController(player);
   }
 
   /// Initialize player eagerly to avoid first-play issues

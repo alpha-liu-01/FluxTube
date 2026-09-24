@@ -121,6 +121,16 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
         {MPV_RENDER_PARAM_INVALID, NULL},
     };
     mpv_render_context_render(render_context, params);
+    GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    static gboolean logged_fb_status = FALSE;
+    if (!logged_fb_status && fb_status != GL_FRAMEBUFFER_COMPLETE) {
+      logged_fb_status = TRUE;
+      g_print("media_kit: TextureGL: framebuffer incomplete: 0x%x\n",
+              fb_status);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFlush();
   }
   *target = GL_TEXTURE_2D;
   *name = self->name;

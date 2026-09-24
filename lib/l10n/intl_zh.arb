@@ -1,5 +1,90 @@
 {
   "home": "首页",
+  "themeSystem": "系统",
+  "themeLight": "浅色",
+  "themeDark": "深色",
+  "themeOled": "OLED 黑",
+  "themeDynamic": "Material You",
+  "youtubeService": "YouTube 服务",
+  "servicePiped": "Piped",
+  "serviceExplode": "Explode",
+  "serviceInvidious": "Invidious",
+  "serviceNewPipe": "NewPipe Extractor",
+  "quality144p": "144p",
+  "quality240p": "240p",
+  "quality360p": "360p",
+  "quality480p": "480p",
+  "quality720p": "720p",
+  "quality1080p": "1080p",
+  "quality1440p": "1440p",
+  "searchFilters": "筛选",
+  "filterAll": "全部",
+  "filterVideos": "视频",
+  "filterChannels": "频道",
+  "filterPlaylists": "播放列表",
+  "playlist": "播放列表",
+  "filterMusic": "音乐",
+  "videoFit": "画面适配",
+  "videoFitContain": "包含",
+  "videoFitCover": "覆盖",
+  "videoFitFill": "填充",
+  "videoFitFitWidth": "适应宽度",
+  "videoFitFitHeight": "适应高度",
+  "skipInterval": "跳过间隔",
+  "skipIntervalDescription": "双击跳过的秒数",
+  "seconds": "秒",
+  "sponsorBlock": "SponsorBlock",
+  "sponsorBlockDescription": "自动跳过赞助片段",
+  "sponsorBlockCategories": "跳过类别",
+  "sponsor": "赞助",
+  "intro": "片头",
+  "outro": "片尾",
+  "selfPromotion": "自我推广",
+  "interaction": "互动",
+  "musicOfftopic": "音乐：非音乐",
+  "openInBrowser": "在浏览器中打开",
+  "openLinksExternally": "在外部浏览器中打开链接",
+  "exportData": "导出数据",
+  "importData": "导入数据",
+  "exportSubscriptions": "导出订阅",
+  "importSubscriptions": "导入订阅",
+  "backupRestore": "备份与恢复",
+  "backupRestoreDescription": "导出或导入你的订阅",
+  "exportSuccess": "导出成功",
+  "importSuccess": "导入成功",
+  "importError": "导入失败",
+  "selectFile": "选择文件",
+  "homeFeedMode": "首页动态",
+  "homeFeedModeAuto": "自动",
+  "homeFeedModeFeedOnly": "订阅",
+  "homeFeedModeTrendingOnly": "热门",
+  "homeFeedModeAutoHint": "有订阅时显示订阅，否则显示热门",
+  "homeFeedModeFeedOnlyHint": "只显示已订阅频道的视频",
+  "homeFeedModeTrendingOnlyHint": "始终只显示热门视频",
+  "noSubscriptions": "没有订阅",
+  "noSubscriptionsHint": "订阅频道后即可在此查看它们的视频",
+  "profiles": "配置文件",
+  "profilesDescription": "为不同账号或偏好创建单独的配置文件",
+  "addProfile": "添加配置文件",
+  "deleteProfile": "删除配置文件",
+  "renameProfile": "重命名配置文件",
+  "switchProfile": "切换配置文件",
+  "profileName": "配置文件名称",
+  "newProfileName": "新配置文件名称",
+  "defaultProfile": "默认",
+  "profileInUse": "使用中",
+  "cannotDeleteDefault": "无法删除默认配置文件",
+  "cannotRenameDefault": "无法重命名默认配置文件",
+  "audioFocus": "音频焦点",
+  "audioFocusDescription": "遇到中断时暂停播放",
+  "pauseOnCall": "来电时暂停",
+  "pauseOnHeadphones": "耳机断开时暂停",
+  "subtitleSize": "字幕大小",
+  "subtitleSizeDescription": "调整视频字幕的大小",
+  "subtitleSizeSmall": "小",
+  "subtitleSizeMedium": "中",
+  "subtitleSizeLarge": "大",
+  "subtitleSizeExtraLarge": "特大",
   "@home": {
     "description": "Home label"
   },
@@ -190,9 +275,498 @@
     "description": "Include title along with url"
   },
   "instances": "实例",
-  "switchRegion": "Please consider switching to a different region for better results.",
-  "swipeDownToDismissDisabled": "'Swipe down to dismiss' disabled",
-  "swipeUpToDismissEnabled": "'Swipe up to dismiss' enabled",
-  "noCommentsFound": "No Comments Found",
-  "disablePipPlayer": "Disable PIP player"
+  "switchRegion": "建议切换到其他地区以获得更好的结果。",
+  "swipeDownToDismissDisabled": "已关闭“下滑关闭”",
+  "swipeUpToDismissEnabled": "已开启“上滑关闭”",
+  "noCommentsFound": "未找到评论",
+  "commentsDisabled": "评论已关闭",
+  "repliesNotSupported": "回复暂不可用",
+  "pinned": "置顶",
+  "disablePipPlayer": "禁用画中画播放器",
+  "videos": "视频",
+  "shorts": "Shorts",
+  "playlists": "播放列表",
+  "noShorts": "没有 Shorts",
+  "noPlaylists": "没有播放列表",
+  "library": "媒体库",
+  "sortBy": "排序方式",
+  "dateAdded": "添加日期",
+  "title": "标题",
+  "duration": "时长",
+  "selected": "已选择",
+  "selectAll": "全选",
+  "delete": "删除",
+  "cancel": "取消",
+  "sort": "排序",
+  "selectVideos": "选择视频",
+  "clearAllSaved": "清除全部已保存",
+  "clearAllHistory": "清除全部历史记录",
+  "clearAllSavedConfirm": "确定要移除所有已保存的视频吗？",
+  "clearAllHistoryConfirm": "确定要清除全部观看历史吗？",
+  "clearAll": "全部清除",
+  "searchSavedVideos": "搜索已保存的视频...",
+  "noSavedVideos": "没有已保存的视频",
+  "startSavingVideos": "保存视频以便稍后观看",
+  "noHistory": "没有观看历史",
+  "watchSomeVideos": "你观看的视频会显示在这里",
+  "deleteVideo": "删除视频",
+  "deleteVideoConfirm": "确定要移除这个视频吗？",
+  "removeFromSaved": "从已保存中移除",
+  "removeFromHistory": "从历史记录中移除",
+  "views": "次观看",
+  "subscriptions": "订阅",
+  "channels": "频道",
+  "searchSubscriptions": "搜索订阅...",
+  "noVideosFound": "没有找到视频",
+  "refreshToLoad": "下拉以刷新",
+  "unsubscribe": "取消订阅",
+  "unsubscribeConfirm": "取消订阅此频道？",
+  "search": "搜索",
+  "searchYouTube": "搜索 YouTube...",
+  "searchForVideosChannels": "搜索视频、频道和播放列表",
+  "recentSearches": "最近搜索",
+  "searchHistoryEnabled": "保存搜索历史",
+  "searchHistoryEnabledDescription": "保存搜索内容以便快速访问",
+  "showSearchHistory": "显示搜索历史",
+  "showSearchHistoryDescription": "在搜索页面显示最近的搜索",
+  "copyLink": "复制链接",
+  "@copyLink": {
+    "description": "Copy link button label"
+  },
+  "shareVia": "通过应用分享",
+  "@shareVia": {
+    "description": "Share via apps button label"
+  },
+  "copiedToClipboard": "已复制到剪贴板",
+  "@copiedToClipboard": {
+    "description": "Snackbar message when link is copied"
+  },
+  "like": "喜欢",
+  "@like": {
+    "description": "Like button label when count is unavailable"
+  },
+  "dislike": "不喜欢",
+  "@dislike": {
+    "description": "Dislike button label when count is unavailable"
+  },
+  "download": "下载",
+  "@download": {
+    "description": "Download button label"
+  },
+  "downloads": "下载",
+  "@downloads": {
+    "description": "Downloads screen title"
+  },
+  "downloading": "正在下载",
+  "@downloading": {
+    "description": "Downloading status label"
+  },
+  "completed": "已完成",
+  "@completed": {
+    "description": "Completed status label"
+  },
+  "pending": "等待中",
+  "@pending": {
+    "description": "Pending status label"
+  },
+  "paused": "已暂停",
+  "@paused": {
+    "description": "Paused status label"
+  },
+  "failed": "失败",
+  "@failed": {
+    "description": "Failed status label"
+  },
+  "cancelled": "已取消",
+  "@cancelled": {
+    "description": "Cancelled status label"
+  },
+  "merging": "正在合并",
+  "@merging": {
+    "description": "Merging audio and video status"
+  },
+  "downloadingVideo": "正在下载视频",
+  "@downloadingVideo": {
+    "description": "Phase indicator when downloading video track"
+  },
+  "downloadingAudio": "正在下载音频",
+  "@downloadingAudio": {
+    "description": "Phase indicator when downloading audio track"
+  },
+  "noDownloads": "没有下载",
+  "@noDownloads": {
+    "description": "Empty downloads state title"
+  },
+  "noDownloadsHint": "下载的视频会显示在这里",
+  "@noDownloadsHint": {
+    "description": "Empty downloads state hint"
+  },
+  "downloadType": "下载类型",
+  "@downloadType": {
+    "description": "Download type selector label"
+  },
+  "videoWithAudio": "视频 + 音频",
+  "@videoWithAudio": {
+    "description": "Video with audio download type"
+  },
+  "videoOnly": "仅视频",
+  "@videoOnly": {
+    "description": "Video only download type"
+  },
+  "audioOnly": "仅音频",
+  "@audioOnly": {
+    "description": "Audio only download type"
+  },
+  "audio": "音频",
+  "@audio": {
+    "description": "Audio badge label"
+  },
+  "videoAudio": "视频+音频",
+  "@videoAudio": {
+    "description": "Video with audio badge label"
+  },
+  "videoQuality": "视频画质",
+  "@videoQuality": {
+    "description": "Video quality selector label"
+  },
+  "audioQuality": "音频质量",
+  "@audioQuality": {
+    "description": "Audio quality selector label"
+  },
+  "startDownload": "开始下载",
+  "@startDownload": {
+    "description": "Start download button label"
+  },
+  "downloadStarted": "已开始下载",
+  "@downloadStarted": {
+    "description": "Download started snackbar message"
+  },
+  "deleteDownload": "删除下载",
+  "@deleteDownload": {
+    "description": "Delete download dialog title"
+  },
+  "deleteDownloadConfirm": "确定要删除此下载吗？",
+  "@deleteDownloadConfirm": {
+    "description": "Delete download confirmation message"
+  },
+  "pause": "暂停",
+  "@pause": {
+    "description": "Pause button label"
+  },
+  "resume": "继续",
+  "@resume": {
+    "description": "Resume button label"
+  },
+  "all": "全部",
+  "@all": {
+    "description": "All tab label"
+  },
+  "unknownError": "发生未知错误",
+  "@unknownError": {
+    "description": "Unknown error message"
+  },
+  "failedToOpenFile": "无法打开文件",
+  "@failedToOpenFile": {
+    "description": "Error message when file cannot be opened"
+  },
+  "fileNotFound": "找不到文件",
+  "@fileNotFound": {
+    "description": "Error message when downloaded file is missing"
+  },
+  "downloadFailed": "下载失败：{title}",
+  "@downloadFailed": {
+    "description": "Error message when download fails",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Video Title"
+      }
+    }
+  },
+  "autoPip": "自动画中画",
+  "@autoPip": {
+    "description": "Setting to enable auto PiP when pressing home button"
+  },
+  "autoPipDescription": "播放视频时按主屏幕键自动进入画中画",
+  "@autoPipDescription": {
+    "description": "Description for auto PiP setting"
+  },
+  "saveToDevice": "保存到设备",
+  "@saveToDevice": {
+    "description": "Save downloaded file to device storage"
+  },
+  "savingToDevice": "正在保存到设备...",
+  "@savingToDevice": {
+    "description": "Message shown while saving file to device"
+  },
+  "savedToDevice": "已保存到设备",
+  "@savedToDevice": {
+    "description": "Success message when file is saved to device"
+  },
+  "saveToDeviceFailed": "保存到设备失败",
+  "@saveToDeviceFailed": {
+    "description": "Error message when save to device fails"
+  },
+  "openFolder": "打开文件夹",
+  "@openFolder": {
+    "description": "Open the folder that contains a finished download"
+  },
+  "castTitle": "投屏",
+  "@castTitle": {
+    "description": "Cast button label"
+  },
+  "castConnected": "已连接",
+  "@castConnected": {
+    "description": "Cast connected state"
+  },
+  "castConnectedTo": "正在投屏到 {device}",
+  "@castConnectedTo": {
+    "description": "Cast target device",
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "castStop": "停止投屏",
+  "@castStop": {
+    "description": "Ends the Cast session"
+  },
+  "castUnavailable": "此设备无法投屏",
+  "@castUnavailable": {
+    "description": "Shown when the Cast framework is missing"
+  },
+  "castFailed": "无法投屏此视频",
+  "@castFailed": {
+    "description": "No castable stream exists"
+  },
+  "newVideoNotifications": "新上传通知",
+  "@newVideoNotifications": {
+    "description": "Setting for subscription upload notifications"
+  },
+  "newVideoNotificationsDescription": "订阅的频道上传视频时通知你",
+  "@newVideoNotificationsDescription": {
+    "description": "Description for upload notification setting"
+  },
+  "notificationsDenied": "通知权限已被拒绝",
+  "@notificationsDenied": {
+    "description": "Shown when the notification permission is refused"
+  },
+  "queue": "队列",
+  "@queue": {
+    "description": "Playback queue title"
+  },
+  "queueEmpty": "队列为空",
+  "@queueEmpty": {
+    "description": "Empty playback queue"
+  },
+  "queueShuffle": "随机播放",
+  "@queueShuffle": {
+    "description": "Shuffles the upcoming queue"
+  },
+  "queueClear": "清空",
+  "@queueClear": {
+    "description": "Clears the playback queue"
+  },
+  "removeFromQueue": "从队列中移除",
+  "@removeFromQueue": {
+    "description": "Removes one queue entry"
+  },
+  "playNext": "下一个播放",
+  "@playNext": {
+    "description": "Queues a video directly after the current one"
+  },
+  "addToQueue": "添加到队列",
+  "@addToQueue": {
+    "description": "Appends a video to the queue"
+  },
+  "addedToQueue": "已添加到队列",
+  "@addedToQueue": {
+    "description": "Confirmation for queue append"
+  },
+  "addedToPlayNext": "已添加到下一个播放",
+  "@addedToPlayNext": {
+    "description": "Confirmation for play next"
+  },
+  "saveToPlaylist": "保存到播放列表",
+  "@saveToPlaylist": {
+    "description": "Playlist picker title"
+  },
+  "localPlaylists": "播放列表",
+  "@localPlaylists": {
+    "description": "Local playlists screen title"
+  },
+  "newPlaylist": "新建播放列表",
+  "@newPlaylist": {
+    "description": "New playlist dialog title"
+  },
+  "newPlaylistShort": "+ 新建",
+  "@newPlaylistShort": {
+    "description": "Compact create-playlist action"
+  },
+  "playlistNameHint": "播放列表名称",
+  "@playlistNameHint": {
+    "description": "Playlist name field hint"
+  },
+  "createAction": "创建",
+  "@createAction": {
+    "description": "Confirms creation"
+  },
+  "renameAction": "重命名",
+  "@renameAction": {
+    "description": "Renames an item"
+  },
+  "renamePlaylistTitle": "重命名播放列表",
+  "@renamePlaylistTitle": {
+    "description": "Rename playlist dialog title"
+  },
+  "newNameHint": "新名称",
+  "@newNameHint": {
+    "description": "New name field hint"
+  },
+  "deletePlaylistTitle": "删除播放列表",
+  "@deletePlaylistTitle": {
+    "description": "Delete playlist dialog title"
+  },
+  "deletePlaylistAction": "删除播放列表",
+  "@deletePlaylistAction": {
+    "description": "Deletes a playlist"
+  },
+  "deletePlaylistConfirm": "删除 {name}？",
+  "@deletePlaylistConfirm": {
+    "description": "Confirms deleting a named playlist",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noPlaylistsYet": "还没有播放列表。\n点按 + 创建一个。",
+  "@noPlaylistsYet": {
+    "description": "Empty local playlists screen"
+  },
+  "noPlaylistsYetPicker": "还没有播放列表。\n点按 + 新建 创建一个。",
+  "@noPlaylistsYetPicker": {
+    "description": "Empty playlist picker"
+  },
+  "addedToPlaylist": "已添加到 {name}",
+  "@addedToPlaylist": {
+    "description": "Confirms adding a video to a named playlist",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playAll": "全部播放",
+  "@playAll": {
+    "description": "Plays every video in a playlist"
+  },
+  "playlistNotFound": "找不到播放列表",
+  "@playlistNotFound": {
+    "description": "Missing playlist"
+  },
+  "noVideosInPlaylist": "还没有视频",
+  "@noVideosInPlaylist": {
+    "description": "Empty playlist"
+  },
+  "addVideosHint": "长按视频即可保存到播放列表",
+  "@addVideosHint": {
+    "description": "Hint for filling an empty playlist"
+  },
+  "videoCountLabel": "{count} 个视频",
+  "@videoCountLabel": {
+    "description": "Number of videos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "debugConsole": "调试控制台",
+  "@debugConsole": {
+    "description": "Debug console screen title"
+  },
+  "shareLogs": "分享日志",
+  "@shareLogs": {
+    "description": "Shares the collected log file"
+  },
+  "clearLogs": "清除日志",
+  "@clearLogs": {
+    "description": "Clears collected logs"
+  },
+  "autoScrollOn": "自动滚动已开启",
+  "@autoScrollOn": {
+    "description": "Log auto-scroll enabled"
+  },
+  "autoScrollOff": "自动滚动已关闭",
+  "@autoScrollOff": {
+    "description": "Log auto-scroll disabled"
+  },
+  "noLogs": "还没有日志",
+  "@noLogs": {
+    "description": "Empty log console"
+  },
+  "logsLabel": "日志",
+  "@logsLabel": {
+    "description": "Log count label"
+  },
+  "imageCacheLabel": "图片缓存",
+  "@imageCacheLabel": {
+    "description": "Image cache size label"
+  },
+  "platformLabel": "平台",
+  "@platformLabel": {
+    "description": "Operating system label"
+  },
+  "sleepTimer": "睡眠定时器",
+  "@sleepTimer": {
+    "description": "Sleep timer setting"
+  },
+  "sleepTimerOff": "关闭",
+  "@sleepTimerOff": {
+    "description": "Sleep timer disabled"
+  },
+  "sleepTimerEndOfVideo": "视频结束时",
+  "@sleepTimerEndOfVideo": {
+    "description": "Sleep timer stops when the video ends"
+  },
+  "sleepTimerMinutes": "{count} 分钟",
+  "@sleepTimerMinutes": {
+    "description": "Sleep timer duration",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepTimerMinutesShort": "{count} 分钟",
+  "@sleepTimerMinutesShort": {
+    "description": "Compact sleep timer duration",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepTimerCustom": "自定义",
+  "@sleepTimerCustom": {
+    "description": "Custom sleep timer duration"
+  },
+  "sleepTimerCustomTitle": "自定义定时器",
+  "@sleepTimerCustomTitle": {
+    "description": "Custom timer dialog title"
+  },
+  "sleepTimerEnterMinutes": "输入分钟数",
+  "@sleepTimerEnterMinutes": {
+    "description": "Custom timer field hint"
+  },
+  "sleepTimerSet": "设置",
+  "@sleepTimerSet": {
+    "description": "Confirms the custom timer"
+  },
+  "sleepTimerEnded": "睡眠定时器已结束",
+  "@sleepTimerEnded": {
+    "description": "Sleep timer fired"
+  }
 }

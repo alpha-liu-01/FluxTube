@@ -260,16 +260,37 @@ class _ScreenDownloadsState extends State<ScreenDownloads>
     );
   }
 
+  Future<({bool ok, String message})> _openDownload(String path) async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      final result = await OpenFilex.open(path);
+      return (ok: result.type == ResultType.done, message: result.message);
+    }
+    try {
+      final ProcessResult result;
+      if (Platform.isWindows) {
+        result = await Process.run('cmd', ['/c', 'start', '', path]);
+      } else if (Platform.isMacOS) {
+        result = await Process.run('open', [path]);
+      } else {
+        result = await Process.run('xdg-open', [path]);
+      }
+      if (result.exitCode == 0) return (ok: true, message: '');
+      final stderr = result.stderr.toString().trim();
+      return (ok: false, message: stderr.isEmpty ? 'exit ${result.exitCode}' : stderr);
+    } on ProcessException catch (e) {
+      return (ok: false, message: e.message);
+    }
+  }
+
   Future<void> _onItemTap(DownloadItem item) async {
     if (item.status == DownloadStatus.completed && item.outputFilePath != null) {
       final file = File(item.outputFilePath!);
       if (await file.exists()) {
-        // Use open_filex to properly open files on Android (handles FileProvider)
-        final result = await OpenFilex.open(item.outputFilePath!);
-        if (result.type != ResultType.done && mounted) {
+        final opened = await _openDownload(item.outputFilePath!);
+        if (!opened.ok && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${S.of(context).failedToOpenFile}: ${result.message}'),
+              content: Text('${S.of(context).failedToOpenFile}: ${opened.message}'),
               behavior: SnackBarBehavior.floating,
             ),
           );

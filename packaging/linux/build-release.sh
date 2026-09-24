@@ -42,6 +42,7 @@ if [[ ! -x "${bundle}/fluxtube" ]]; then
 fi
 
 "${root}/packaging/java/bundle-runtime.sh" "${bundle}"
+"${root}/packaging/ffmpeg/bundle-ffmpeg.sh" "${bundle}"
 
 mkdir -p "${root}/dist"
 archive="${root}/dist/fluxtube-${version}-linux-x64.tar.gz"

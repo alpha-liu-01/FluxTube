@@ -95,6 +95,7 @@ jobs:
           flutter pub get
           flutter build windows --release
           bash packaging/java/bundle-runtime.sh "build/windows/x64/runner/Release"
+          bash packaging/ffmpeg/bundle-ffmpeg.sh "build/windows/x64/runner/Release"
           $version = "${{ steps.app_version.outputs.version }}"
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           $archive = "dist/fluxtube-$version-windows-x64.zip"
@@ -150,7 +151,7 @@ jobs:
             echo "Included archives:"
             find dist -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -printf '- %f\n' | sort
             echo
-            echo "Both archives include a headless Java 17 runtime and newpipe-spike.jar."
+            echo "Both archives include a headless Java 17 runtime, newpipe-spike.jar, and a static ffmpeg."
             echo "The Linux archive needs libmpv installed at runtime. ffmpeg is required for merged downloads."
             echo
             echo "Recent changes:"

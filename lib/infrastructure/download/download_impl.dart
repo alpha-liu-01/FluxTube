@@ -27,6 +27,9 @@ class DownloadImpl implements DownloadService {
   // Platform channel for native MediaMuxer
   static const _muxerChannel = MethodChannel('com.fazilvk.fluxtube/muxer');
 
+  // Set when a desktop join fails, then thrown by the download call sites.
+  String? _muxFailure;
+
   // Track active downloads
   final Map<int, CancelToken> _cancelTokens = {};
   final Map<int, bool> _pausedDownloads = {};
@@ -488,7 +491,7 @@ class DownloadImpl implements DownloadService {
         // Clean up temp files
         await _deleteFile(item.videoFilePath);
         await _deleteFile(item.audioFilePath);
-      } else {
+      } else if (Platform.isAndroid) {
         // Fallback: just use video file if muxing fails
         final videoFile = File(item.videoFilePath!);
         if (await videoFile.exists()) {
@@ -496,6 +499,11 @@ class DownloadImpl implements DownloadService {
         }
         // Still delete audio temp file
         await _deleteFile(item.audioFilePath);
+      } else {
+        await _deleteFile(item.outputFilePath);
+        throw Exception(
+          _muxFailure ?? 'Failed to join video and audio',
+        );
       }
     } else if (item.videoFilePath != null) {
       // No audio, just rename video
@@ -506,6 +514,18 @@ class DownloadImpl implements DownloadService {
     }
   }
 
+  /// Same order as the sidecar's Java lookup: override, beside the
+  /// executable, then PATH.
+  String _resolveFfmpeg() {
+    final override = Platform.environment['FLUXTUBE_FFMPEG'];
+    if (override != null && override.isNotEmpty) return override;
+    final bundledName = Platform.isWindows ? 'ffmpeg.exe' : 'ffmpeg';
+    final bundled =
+        '${File(Platform.resolvedExecutable).parent.path}${Platform.pathSeparator}$bundledName';
+    if (File(bundled).existsSync()) return bundled;
+    return 'ffmpeg';
+  }
+
   /// Mux video and audio streams into a single MP4 file
   /// Uses Android's native MediaMuxer API via platform channel
   Future<bool> _muxVideoAndAudio({
@@ -513,6 +533,7 @@ class DownloadImpl implements DownloadService {
     required String audioPath,
     required String outputPath,
   }) async {
+    _muxFailure = null;
     try {
       if (Platform.isAndroid) {
         // Use native Android MediaMuxer via platform channel
@@ -530,31 +551,38 @@ class DownloadImpl implements DownloadService {
         log('[Download] Native MediaMuxer muxing failed');
         return false;
       } else {
-        // For non-Android platforms, try FFmpeg via Process
-        final result = await Process.run(
-          'ffmpeg',
-          [
-            '-i', videoPath,
-            '-i', audioPath,
-            '-c:v', 'copy',
-            '-c:a', 'copy',
-            '-shortest',
-            '-y',
-            outputPath,
-          ],
-          runInShell: Platform.isWindows,
-        );
+        final ffmpeg = _resolveFfmpeg();
+        try {
+          final result = await Process.run(
+            ffmpeg,
+            [
+              '-i', videoPath,
+              '-i', audioPath,
+              '-c:v', 'copy',
+              '-c:a', 'copy',
+              '-shortest',
+              '-y',
+              outputPath,
+            ],
+          );
 
-        if (result.exitCode == 0) {
-          log('[Download] FFmpeg muxing successful');
-          return true;
+          if (result.exitCode == 0) {
+            log('[Download] FFmpeg muxing successful');
+            return true;
+          }
+
+          log('[Download] FFmpeg muxing failed (exit code: ${result.exitCode})');
+          _muxFailure = 'ffmpeg exited ${result.exitCode}';
+          return false;
+        } on ProcessException {
+          log('[Download] ffmpeg was not found ($ffmpeg)');
+          _muxFailure = 'ffmpeg was not found ($ffmpeg)';
+          return false;
         }
-
-        log('[Download] FFmpeg muxing failed (exit code: ${result.exitCode})');
-        return false;
       }
     } catch (e) {
       log('[Download] Muxing error: $e');
+      _muxFailure = e.toString();
       return false;
     }
   }
@@ -1254,13 +1282,18 @@ class DownloadImpl implements DownloadService {
         // Clean up temp files
         await _deleteFile(item.videoFilePath);
         await _deleteFile(item.audioFilePath);
-      } else {
+      } else if (Platform.isAndroid) {
         // Fallback: just use video file if muxing fails
         final videoFile = File(item.videoFilePath!);
         if (await videoFile.exists()) {
           await videoFile.rename(item.outputFilePath!);
         }
         await _deleteFile(item.audioFilePath);
+      } else {
+        await _deleteFile(item.outputFilePath);
+        throw Exception(
+          _muxFailure ?? 'Failed to join video and audio',
+        );
       }
     } else if (item.videoFilePath != null) {
       final videoFile = File(item.videoFilePath!);

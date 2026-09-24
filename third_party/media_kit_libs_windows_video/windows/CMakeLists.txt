@@ -64,16 +64,24 @@ function(check_directory_exists_and_not_empty dir result_var)
 endfunction()
 
 # libmpv archive containing the pre-built shared libraries & headers.
-# FluxTube: shinchiro's baseline x86-64 build (no AVX2 requirement), mirrored
+# x64: shinchiro's baseline x86-64 build (no AVX2 requirement), mirrored
 # unchanged from
 # https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260924
 # Its d3d11-egl interop accepts ANGLE's client-side EGL_EXT_device_query
 # (mpv#18326), so hardware decoding is zero-copy d3d11va, not d3d11va-copy.
-set(LIBMPV "mpv-dev-x86_64-20260924-git-2a4eb8067c.7z")
-
-# Download URL & MD5 hash of the libmpv archive.
-set(LIBMPV_URL "https://github.com/alpha-liu-01/FluxTube/releases/download/deps-libmpv-20260924/${LIBMPV}")
-set(LIBMPV_MD5 "57151c4ca8caaf4a833cd41ec5a2900c")
+# ARM64: a no-DotProd build. Stock aarch64 libmpv uses SDOT/UDOT, which
+# Snapdragon 850 traps.
+if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+  find_program(SEVEN_ZIP NAMES 7z 7za REQUIRED
+    PATHS "C:/Program Files/7-Zip" "C:/Program Files (x86)/7-Zip")
+  set(LIBMPV "mpv-dev-aarch64-nodotprod.7z")
+  set(LIBMPV_URL "https://github.com/alpha-liu-01/FluxTube/releases/download/windows-arm64-libmpv/${LIBMPV}")
+  set(LIBMPV_MD5 "d64114f38dc0c0cc73ff98c5a1387f0f")
+else()
+  set(LIBMPV "mpv-dev-x86_64-20260924-git-2a4eb8067c.7z")
+  set(LIBMPV_URL "https://github.com/alpha-liu-01/FluxTube/releases/download/deps-libmpv-20260924/${LIBMPV}")
+  set(LIBMPV_MD5 "57151c4ca8caaf4a833cd41ec5a2900c")
+endif()
 
 # Download location of the libmpv archive.
 set(LIBMPV_ARCHIVE "${CMAKE_BINARY_DIR}/${LIBMPV}")
@@ -107,9 +115,14 @@ if(NOT LIBMPV_SRC_VALID)
   message(STATUS "Extracting ${LIBMPV}...")
   make_directory("${LIBMPV_SRC}")
   add_custom_target("${PROJECT_NAME}_LIBMPV_EXTRACT" ALL)
+  if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+    set(LIBMPV_EXTRACT_COMMAND "${SEVEN_ZIP}" x -y "${LIBMPV_ARCHIVE}")
+  else()
+    set(LIBMPV_EXTRACT_COMMAND "${CMAKE_COMMAND}" -E tar xzf "\"${LIBMPV_ARCHIVE}\"")
+  endif()
   add_custom_command(
     TARGET "${PROJECT_NAME}_LIBMPV_EXTRACT"
-    COMMAND "${CMAKE_COMMAND}" -E tar xzf "\"${LIBMPV_ARCHIVE}\""
+    COMMAND ${LIBMPV_EXTRACT_COMMAND}
     COMMAND xcopy "\"${LIBMPV_SRC}/include/mpv\"" "\"${LIBMPV_SRC}/mpv\"" /E /H /C /I
     COMMAND rmdir "\"${LIBMPV_SRC}/include\"" /S /Q
     COMMAND ren "\"${LIBMPV_SRC}/mpv\"" "\"include\""
@@ -121,11 +134,16 @@ endif()
 # ------------------------------------------------------------------------------
 
 # ANGLE archive containing the pre-built shared libraries & headers.
-set(ANGLE "ANGLE.7z")
-
-# Download URL & MD5 hash of the ANGLE archive.
-set(ANGLE_URL "https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/ANGLE.7z")
-set(ANGLE_MD5 "e866f13e8d552348058afaafe869b1ed")
+# ANGLE.7z is x64. Windows ARM64 uses the matching ARM64 build.
+if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+  set(ANGLE "ANGLE_WINARM64.7z")
+  set(ANGLE_URL "https://github.com/talynone/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
+  set(ANGLE_MD5 "b56aaae894ccf6c8ee90b59ee642a787")
+else()
+  set(ANGLE "ANGLE.7z")
+  set(ANGLE_URL "https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/${ANGLE}")
+  set(ANGLE_MD5 "e866f13e8d552348058afaafe869b1ed")
+endif()
 
 # Download location of the ANGLE archive.
 set(ANGLE_ARCHIVE "${CMAKE_BINARY_DIR}/${ANGLE}")
@@ -144,9 +162,14 @@ if(NOT ANGLE_SRC_VALID)
   message(STATUS "Extracting ${ANGLE}...")
   make_directory("${ANGLE_SRC}")
   add_custom_target("${PROJECT_NAME}_ANGLE_EXTRACT" ALL)
+  if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+    set(ANGLE_EXTRACT_COMMAND "${SEVEN_ZIP}" x -y "${ANGLE_ARCHIVE}")
+  else()
+    set(ANGLE_EXTRACT_COMMAND "${CMAKE_COMMAND}" -E tar xzf "\"${ANGLE_ARCHIVE}\"")
+  endif()
   add_custom_command(
     TARGET "${PROJECT_NAME}_ANGLE_EXTRACT"
-    COMMAND "${CMAKE_COMMAND}" -E tar xzf "\"${ANGLE_ARCHIVE}\""
+    COMMAND ${ANGLE_EXTRACT_COMMAND}
     WORKING_DIRECTORY "${ANGLE_SRC}"
   )
 endif()

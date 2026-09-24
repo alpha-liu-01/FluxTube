@@ -15,7 +15,7 @@ jobs:
     # A draft created by this workflow fires release.created as github-actions.
     # Skip that run so it does not build the same archives twice.
     # Releases tagged deps-* only host build dependencies such as libmpv.
-    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-')
+    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-') && github.event.release.tag_name != 'windows-arm64-libmpv'
     runs-on: ubuntu-26.04
 
     steps:
@@ -65,7 +65,7 @@ jobs:
 
   build-windows:
     name: Build Windows x64 installer
-    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-')
+    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-') && github.event.release.tag_name != 'windows-arm64-libmpv'
     runs-on: windows-latest
 
     steps:
@@ -120,12 +120,88 @@ jobs:
           path: dist/fluxtube-*-windows-x64.exe
           if-no-files-found: error
 
+  build-windows-arm64:
+    name: Build Windows ARM64 installer
+    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-') && github.event.release.tag_name != 'windows-arm64-libmpv'
+    runs-on: windows-11-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # releases_windows.json has no dart_sdk_arch=arm64 entry, so flutter-action
+      # cannot install Flutter 3.47.1 here. Clone the tag and let it fetch the
+      # Windows ARM64 Dart SDK.
+      - name: Cache Flutter SDK
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/flutter
+          key: flutter-git-windows-arm64-3.47.1
+
+      - name: Clone Flutter
+        shell: pwsh
+        run: |
+          $FlutterRoot = Join-Path $env:RUNNER_TEMP 'flutter'
+          if (-not (Test-Path (Join-Path $FlutterRoot 'bin\flutter.bat'))) {
+            git clone --depth 1 --branch 3.47.1 https://github.com/flutter/flutter.git $FlutterRoot
+          }
+          git config --global --add safe.directory $FlutterRoot
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $FlutterRoot 'bin')
+          Add-Content -Path $env:GITHUB_ENV -Value "FLUTTER_ROOT=$FlutterRoot"
+
+      - name: Precache Flutter
+        run: flutter --version
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install Inno Setup and 7-Zip
+        run: choco install innosetup 7zip --no-progress -y
+
+      - name: Build Windows ARM64 installer
+        shell: pwsh
+        run: |
+          flutter config --no-analytics --enable-windows-desktop
+          flutter pub get
+          flutter build windows --release
+          bash packaging/java/bundle-runtime.sh "build/windows/arm64/runner/Release"
+          bash packaging/ffmpeg/bundle-ffmpeg.sh "build/windows/arm64/runner/Release"
+          ./packaging/windows/copy-arm64-crt.ps1 -Release "build/windows/arm64/runner/Release"
+          $version = "${{ steps.app_version.outputs.version }}"
+          $numeric = $version -replace '\+', '.'
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=$version" `
+            "/DVersionInfo=$numeric" `
+            "/DSetupArch=arm64" `
+            "packaging\windows\fluxtube.iss"
+          Get-Item "dist/fluxtube-$version-windows-arm64.exe" | Format-List FullName, Length
+
+      - name: Upload Windows ARM64 installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
+          path: dist/fluxtube-*-windows-arm64.exe
+          if-no-files-found: error
+
   release:
     name: Publish desktop files
     needs:
       - build-linux
       - build-windows
-    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-')
+      - build-windows-arm64
+    if: github.actor != 'github-actions[bot]' && !startsWith(github.event.release.tag_name, 'deps-') && github.event.release.tag_name != 'windows-arm64-libmpv'
     runs-on: ubuntu-26.04
 
     steps:
@@ -137,7 +213,7 @@ jobs:
       - name: Download archives
         uses: actions/download-artifact@v4
         with:
-          pattern: "*-x64"
+          pattern: "*"
           path: dist
           merge-multiple: true
 
@@ -162,8 +238,12 @@ jobs:
             echo "Refusing to publish a zip. The Windows asset must be the installer exe." >&2
             exit 1
           fi
-          if ! find release-assets -type f -name '*.exe' | grep -q .; then
-            echo "Windows installer exe is missing." >&2
+          if ! find release-assets -type f -name '*-windows-x64.exe' | grep -q .; then
+            echo "Windows x64 installer exe is missing." >&2
+            exit 1
+          fi
+          if ! find release-assets -type f -name '*-windows-arm64.exe' | grep -q .; then
+            echo "Windows ARM64 installer exe is missing." >&2
             exit 1
           fi
           ls -lah release-assets
@@ -179,8 +259,9 @@ jobs:
             echo "Included files:"
             find release-assets -maxdepth 1 -type f -printf '- %f\n' | sort
             echo
-            echo "The Linux archive and the Windows installer both include a headless Java 17 runtime, newpipe-spike.jar, and a static ffmpeg."
-            echo "The Windows file is the Inno Setup installer (.exe), not a zip of that installer. The Linux archive needs libmpv installed at runtime."
+            echo "The Linux archive and both Windows installers include a headless Java 17 runtime, newpipe-spike.jar, and a static ffmpeg."
+            echo "The Windows files are Inno Setup installers (.exe), not a zip of those installers. The Linux archive needs libmpv installed at runtime."
+            echo "The Windows ARM64 installer is for Windows on ARM, including Snapdragon 850, and uses the no-DotProd libmpv."
             echo
             echo "Recent changes:"
             git log --pretty='- %s (%h)' -20

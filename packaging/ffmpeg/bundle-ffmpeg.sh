@@ -27,11 +27,18 @@ case "$(uname -s)" in
     binary_name="ffmpeg"
     ;;
   MINGW* | MSYS* | CYGWIN*)
-    asset="ffmpeg-N-126755-g52f05ac780-win64-gpl.zip"
+    case "$(uname -m)" in
+      aarch64 | arm64)
+        asset="ffmpeg-N-126755-g52f05ac780-winarm64-gpl.zip"
+        ;;
+      *)
+        asset="ffmpeg-N-126755-g52f05ac780-win64-gpl.zip"
+        ;;
+    esac
     binary_name="ffmpeg.exe"
     ;;
   *)
-    echo "Unsupported OS $(uname -s). This script bundles the Linux and Windows x64 builds." >&2
+    echo "Unsupported OS $(uname -s). This script bundles the Linux and Windows x64 and ARM64 builds." >&2
     exit 1
     ;;
 esac

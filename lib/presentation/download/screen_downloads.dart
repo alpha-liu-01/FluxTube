@@ -217,6 +217,7 @@ class _ScreenDownloadsState extends State<ScreenDownloads>
               onResume: () => _onResume(item),
               onCancel: () => _onCancel(item),
               onSaveToDevice: () => _onSaveToDevice(item),
+              onOpenFolder: () => _onOpenFolder(item),
             ),
           );
         },
@@ -372,6 +373,32 @@ class _ScreenDownloadsState extends State<ScreenDownloads>
           DownloadEvent.saveToDevice(downloadItem: item),
         );
   }
+
+  Future<void> _onOpenFolder(DownloadItem item) async {
+    final path = item.outputFilePath;
+    if (path == null) return;
+    final file = File(path);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context).fileNotFound),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+    final opened = await _openDownload(file.parent.path);
+    if (!opened.ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${S.of(context).failedToOpenFile}: ${opened.message}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 }
 
 class _DownloadItemCard extends StatelessWidget {
@@ -384,6 +411,7 @@ class _DownloadItemCard extends StatelessWidget {
   final VoidCallback onResume;
   final VoidCallback onCancel;
   final VoidCallback? onSaveToDevice;
+  final VoidCallback? onOpenFolder;
 
   const _DownloadItemCard({
     required this.item,
@@ -395,6 +423,7 @@ class _DownloadItemCard extends StatelessWidget {
     required this.onResume,
     required this.onCancel,
     this.onSaveToDevice,
+    this.onOpenFolder,
   });
 
   @override
@@ -723,6 +752,9 @@ class _DownloadItemCard extends StatelessWidget {
           case 'save_to_device':
             onSaveToDevice?.call();
             break;
+          case 'open_folder':
+            onOpenFolder?.call();
+            break;
         }
       },
       itemBuilder: (context) {
@@ -768,18 +800,30 @@ class _DownloadItemCard extends StatelessWidget {
           ));
         }
 
-        // Save to device option for completed downloads
         if (item.status == DownloadStatus.completed) {
-          items.add(PopupMenuItem(
-            value: 'save_to_device',
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.square_arrow_down),
-                AppSpacing.width8,
-                Text(locals.saveToDevice),
-              ],
-            ),
-          ));
+          if (Platform.isAndroid || Platform.isIOS) {
+            items.add(PopupMenuItem(
+              value: 'save_to_device',
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.square_arrow_down),
+                  AppSpacing.width8,
+                  Text(locals.saveToDevice),
+                ],
+              ),
+            ));
+          } else {
+            items.add(PopupMenuItem(
+              value: 'open_folder',
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.folder),
+                  AppSpacing.width8,
+                  Text(locals.openFolder),
+                ],
+              ),
+            ));
+          }
         }
 
         items.add(PopupMenuItem(

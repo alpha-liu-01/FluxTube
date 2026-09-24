@@ -2053,6 +2053,17 @@ class S {
       args: [],
     );
   }
+
+  /// `Open folder`
+  String get openFolder {
+    return Intl.message(
+      'Open folder',
+      name: 'openFolder',
+      desc: 'Open the folder that contains a finished download',
+      args: [],
+    );
+  }
+
   /// `Cast`
   String get castTitle {
     return Intl.message(
@@ -2353,7 +2364,7 @@ class S {
     );
   }
 
-  /// `No playlists yet. Tap + to create one.`
+  /// `No playlists yet.\nTap + to create one.`
   String get noPlaylistsYet {
     return Intl.message(
       'No playlists yet.\nTap + to create one.',
@@ -2363,7 +2374,7 @@ class S {
     );
   }
 
-  /// `No playlists yet. Tap + New to create one.`
+  /// `No playlists yet.\nTap + New to create one.`
   String get noPlaylistsYetPicker {
     return Intl.message(
       'No playlists yet.\nTap + New to create one.',

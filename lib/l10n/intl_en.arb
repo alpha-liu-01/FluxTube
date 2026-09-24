@@ -507,6 +507,10 @@
   "@saveToDeviceFailed": {
     "description": "Error message when save to device fails"
   },
+  "openFolder": "Open folder",
+  "@openFolder": {
+    "description": "Open the folder that contains a finished download"
+  },
   "castTitle": "Cast",
   "@castTitle": {
     "description": "Cast button label"

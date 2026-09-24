@@ -107,11 +107,19 @@ case "$(uname -m)" in
     ;;
 esac
 
-url="https://api.adoptium.net/v3/binary/latest/17/ga/${os_name}/${arch}/jre/hotspot/normal/eclipse?project=jdk"
+# Temurin has no Windows ARM64 JDK 17. Microsoft Build of OpenJDK 17 does,
+# and it is also GPL-2.0 with the Classpath Exception.
+if [[ "${os_name}" == windows && "${arch}" == aarch64 ]]; then
+  url="https://aka.ms/download-jdk/microsoft-jdk-17-windows-aarch64.zip"
+  runtime_name="Microsoft OpenJDK 17"
+else
+  url="https://api.adoptium.net/v3/binary/latest/17/ga/${os_name}/${arch}/jre/hotspot/normal/eclipse?project=jdk"
+  runtime_name="Temurin 17 JRE"
+fi
 workdir="$(mktemp -d)"
 trap 'rm -rf "${workdir}"' EXIT
 
-echo "Downloading Temurin 17 JRE for ${os_name}/${arch}"
+echo "Downloading ${runtime_name} for ${os_name}/${arch}"
 curl -fL --retry 3 -o "${workdir}/jre.archive" -D "${workdir}/headers" "${url}"
 filename="$(sed -n 's/.*[Ff]ilename=\([^;]*\).*/\1/p' "${workdir}/headers" | tr -d '\r" ' | tail -n 1)"
 case "${filename}" in
@@ -139,7 +147,7 @@ fi
 
 top="$(find "${workdir}/extract" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 if [[ -z "${top}" ]]; then
-  echo "Temurin archive did not contain a runtime directory." >&2
+  echo "Runtime archive did not contain a runtime directory." >&2
   exit 1
 fi
 

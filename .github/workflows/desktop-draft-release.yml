@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -153,9 +153,10 @@ jobs:
         run: flutter --version
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          # Temurin publishes no JDK 17 for Windows ARM64. Microsoft OpenJDK 17 does.
+          distribution: microsoft
           java-version: "17"
 
       - name: Read app version

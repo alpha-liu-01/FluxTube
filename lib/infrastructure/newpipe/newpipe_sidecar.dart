@@ -86,8 +86,22 @@ class NewPipeSidecar {
     process?.kill();
   }
 
+  String _resolveJava() {
+    final override = Platform.environment['FLUXTUBE_JAVA'];
+    if (override != null && override.isNotEmpty) return override;
+    final bundledName = Platform.isWindows ? 'java.exe' : 'java';
+    final bundled = p.join(
+      p.dirname(Platform.resolvedExecutable),
+      'jre',
+      'bin',
+      bundledName,
+    );
+    if (File(bundled).existsSync()) return bundled;
+    return 'java';
+  }
+
   Future<void> _start() async {
-    final javaBin = Platform.environment['FLUXTUBE_JAVA'] ?? 'java';
+    final javaBin = _resolveJava();
     final jar = _findJar();
     if (jar == null) {
       throw NewPipeSidecarException(

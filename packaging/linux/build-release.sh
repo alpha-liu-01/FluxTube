@@ -29,13 +29,19 @@ if [[ -z "${version}" ]]; then
 fi
 
 flutter pub get
-flutter build linux --release
+dart_define_args=()
+if [[ -n "${FLUXTUBE_DART_DEFINE:-}" ]]; then
+  dart_define_args+=(--dart-define="${FLUXTUBE_DART_DEFINE}")
+fi
+flutter build linux --release "${dart_define_args[@]}"
 
 bundle="${root}/build/linux/x64/release/bundle"
 if [[ ! -x "${bundle}/fluxtube" ]]; then
   echo "Release bundle is missing ${bundle}/fluxtube." >&2
   exit 1
 fi
+
+"${root}/packaging/java/bundle-runtime.sh" "${bundle}"
 
 mkdir -p "${root}/dist"
 archive="${root}/dist/fluxtube-${version}-linux-x64.tar.gz"

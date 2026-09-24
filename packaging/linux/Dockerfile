@@ -38,7 +38,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # sqlite3_flutter_libs configures mimalloc with Unix Makefiles, which needs make
 # even though the Flutter app itself builds with Ninja.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends make \
+    && apt-get install -y --no-install-recommends \
+        make \
+        openjdk-17-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src

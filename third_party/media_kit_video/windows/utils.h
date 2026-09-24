@@ -28,6 +28,8 @@ class Utils {
 
   static bool fullscreen_;
   static RECT rect_before_fullscreen_;
+  static LONG_PTR style_before_fullscreen_;
+  static WINDOWPLACEMENT placement_before_fullscreen_;
 };
 
 #endif  // UTILS_H_

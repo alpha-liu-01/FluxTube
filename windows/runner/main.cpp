@@ -22,6 +22,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // path redraws the UI at a few frames per second. Skia uses the same
   // Direct3D 11 display.
   project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
+  // Flutter 3.38+ runs Dart on the platform thread by default. 3.35 kept a
+  // separate UI thread. That is the workaround in flutter#178916.
+  project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();

@@ -1,5 +1,5 @@
 ; Per-user installer for the Windows x64 release folder.
-; ISCC resolves relative paths from this script, not from the working directory.
+; SourceDir is the repo root. OutputDir and SetupIconFile are relative to that.
 ;   ISCC.exe /DAppVersion=0.9.3+14 /DVersionInfo=0.9.3.14 packaging\windows\fluxtube.iss
 #ifndef AppVersion
 #define AppVersion "0.9.3+14"
@@ -18,9 +18,9 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 SourceDir=..\..
-OutputDir=..\..\dist
+OutputDir=dist
 OutputBaseFilename=fluxtube-{#AppVersion}-windows-x64
-SetupIconFile=..\..\windows\runner\resources\app_icon.ico
+SetupIconFile=windows\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\fluxtube.exe
 Compression=lzma2
 SolidCompression=yes

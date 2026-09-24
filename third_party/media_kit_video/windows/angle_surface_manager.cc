@@ -42,9 +42,18 @@ void ANGLESurfaceManager::SetSize(int32_t width, int32_t height) {
   if (width == width_ && height == height_) {
     return;
   }
+  // |Read| copies from the D3D textures on Flutter's raster thread. |Create|
+  // releases and replaces them, so both must hold |mutex_|.
+  ::WaitForSingleObject(mutex_, INFINITE);
   width_ = width;
   height_ = height;
-  Create();
+  try {
+    Create();
+  } catch (...) {
+    ::ReleaseMutex(mutex_);
+    throw;
+  }
+  ::ReleaseMutex(mutex_);
 }
 
 void ANGLESurfaceManager::Draw(std::function<void()> callback) {

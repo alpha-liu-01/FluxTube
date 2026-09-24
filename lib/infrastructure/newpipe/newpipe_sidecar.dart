@@ -111,14 +111,22 @@ class NewPipeSidecar {
       );
     }
     debugPrint('[NewPipe] starting $javaBin -jar $jar');
-    final process = await Process.start(javaBin, ['-jar', jar]);
+    // The pipe is UTF-8 both ways. Windows defaults to the ANSI code page.
+    final process = await Process.start(javaBin, [
+      '-Dfile.encoding=UTF-8',
+      '-Dstdout.encoding=UTF-8',
+      '-Dstderr.encoding=UTF-8',
+      '-jar',
+      jar,
+    ]);
+    process.stdin.encoding = utf8;
     _process = process;
     _stdoutSub = process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(_onLine, onError: _onStreamError);
     process.stderr
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .transform(const LineSplitter())
         .listen((line) {
       if (line.isNotEmpty) debugPrint('[NewPipe] $line');

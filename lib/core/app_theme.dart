@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:fluxtube/core/colors.dart';
 
 abstract class AppTheme {
-  // Linux Impeller crashes painting a video Texture into a route snapshot.
+  // Impeller's OpenGL ES backend (Linux, and ANGLE on Windows) crashes
+  // painting a video Texture into a route snapshot.
   static const PageTransitionsTheme _pageTransitionsTheme =
       PageTransitionsTheme(
     builders: <TargetPlatform, PageTransitionsBuilder>{
       TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+      TargetPlatform.windows: ZoomPageTransitionsBuilder(
+        allowSnapshotting: false,
+      ),
       TargetPlatform.linux: ZoomPageTransitionsBuilder(
         allowSnapshotting: false,
       ),

@@ -159,10 +159,14 @@ class _GenericPlayerControlsOverlayState extends State<GenericPlayerControlsOver
 
   StreamSubscription<double>? _volumeSubscription;
 
+  // Desktop panels usually do not expose brightness to screen_brightness.
+  bool get _canSetBrightness => Platform.isAndroid || Platform.isIOS;
+
   Future<void> _initBrightnessAndVolume() async {
     try {
-      // Get current brightness
-      _currentBrightness = await ScreenBrightness().application;
+      if (_canSetBrightness) {
+        _currentBrightness = await ScreenBrightness().application;
+      }
 
       // Get current volume and hide system UI
       VolumeController.instance.showSystemUI = false;
@@ -186,8 +190,7 @@ class _GenericPlayerControlsOverlayState extends State<GenericPlayerControlsOver
     _animationController.dispose();
     _seekRippleController.dispose();
     _volumeSubscription?.cancel();
-    // Android and iOS are the platforms where a drag changed the screen.
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_canSetBrightness) {
       ScreenBrightness().resetApplicationScreenBrightness();
     }
     super.dispose();
@@ -347,6 +350,7 @@ class _GenericPlayerControlsOverlayState extends State<GenericPlayerControlsOver
 
   // Vertical drag for brightness/volume
   void _onVerticalDragStart(DragStartDetails details, bool isLeftSide) {
+    if (isLeftSide && !_canSetBrightness) return;
     _hideTimer?.cancel();
     _isVerticalDragging = true;
     _startDragY = details.localPosition.dy;
@@ -395,6 +399,7 @@ class _GenericPlayerControlsOverlayState extends State<GenericPlayerControlsOver
   }
 
   Future<void> _setBrightness(double value) async {
+    if (!_canSetBrightness) return;
     try {
       await ScreenBrightness().setApplicationScreenBrightness(value);
       setState(() => _currentBrightness = value);

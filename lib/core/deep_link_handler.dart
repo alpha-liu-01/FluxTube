@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -18,9 +19,12 @@ class DeepLinkHandler {
     _context = context;
     _appLinks = AppLinks();
     _setupDeepLinkListener();
-    _setupShareIntentListener();
     _handleInitialLink();
-    _handleInitialShareIntent();
+    // receive_sharing_intent only has Android and iOS implementations.
+    if (Platform.isAndroid || Platform.isIOS) {
+      _setupShareIntentListener();
+      _handleInitialShareIntent();
+    }
   }
 
   void _setupDeepLinkListener() {

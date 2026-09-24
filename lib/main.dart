@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +26,7 @@ import 'package:fluxtube/core/services/audio_handler_service.dart';
 import 'package:fluxtube/core/services/log_collector.dart';
 import 'package:fluxtube/core/services/subscription_notifier.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 import 'core/di/injectable.dart';
 
@@ -40,6 +44,14 @@ void main() async {
 
   // Initialize media_kit
   MediaKit.ensureInitialized();
+
+  // screen_brightness_windows re-reads monitor brightness on every window
+  // resize and focus change. That fails on displays without DDC/CI and logs
+  // "Problem getting monitor brightness" each time. The app never changes
+  // brightness on Windows.
+  if (Platform.isWindows) {
+    unawaited(ScreenBrightness.instance.setAutoReset(false));
+  }
 
   // Allow up to 200 MB for decoded image bitmaps (default is 100 MB)
   PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20;

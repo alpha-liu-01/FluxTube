@@ -7,12 +7,19 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.VideoStream
+import java.io.FileDescriptor
+import java.io.FileOutputStream
+import java.io.PrintStream
 
 /**
  * No arguments: stay up and answer NewPipeChannel calls on stdin.
  * A video id: print that video's streams as JSON and exit (used by play.sh).
  */
 fun main(args: Array<String>) {
+    // The app decodes this pipe as UTF-8. Java 17 on Windows otherwise writes
+    // the ANSI code page (Cp1252, GBK, ...).
+    System.setOut(PrintStream(FileOutputStream(FileDescriptor.out), true, "UTF-8"))
+    System.setErr(PrintStream(FileOutputStream(FileDescriptor.err), true, "UTF-8"))
     NewPipe.init(FluxTubeDownloader.getInstance())
     val videoId = args.firstOrNull()?.takeIf { it.isNotBlank() }
     if (videoId == null) {

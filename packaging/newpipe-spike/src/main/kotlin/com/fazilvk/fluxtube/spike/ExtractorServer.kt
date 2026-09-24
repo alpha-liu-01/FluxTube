@@ -35,7 +35,7 @@ object ExtractorServer {
     private const val cacheTtlMs = 5 * 60 * 1000L
 
     fun serve() {
-        val reader = System.`in`.bufferedReader()
+        val reader = System.`in`.bufferedReader(Charsets.UTF_8)
         while (true) {
             val line = reader.readLine() ?: break
             if (line.isBlank()) continue

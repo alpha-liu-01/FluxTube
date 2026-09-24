@@ -93,10 +93,6 @@ mpv_render_context* video_output_get_render_context(VideoOutput* self);
 // Flutter calls FlTextureGL.populate with Impeller's context current.
 gboolean video_output_ensure_render_context(VideoOutput* self);
 
-gboolean video_output_flutter_gl_bound(VideoOutput* self);
-
-gboolean video_output_take_pending_texture_replace(VideoOutput* self);
-
 GdkGLContext* video_output_get_gdk_gl_context(VideoOutput* self);
 
 guint8* video_output_get_pixel_buffer(VideoOutput* self);

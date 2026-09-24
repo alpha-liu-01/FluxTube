@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
@@ -188,8 +189,10 @@ class _PlayerControlsOverlayState extends State<PlayerControlsOverlay>
     _animationController.dispose();
     _seekRippleController.dispose();
     _volumeSubscription?.cancel();
-    // Reset brightness to system default when leaving
-    ScreenBrightness().resetApplicationScreenBrightness();
+    // Android and iOS are the platforms where a drag changed the screen.
+    if (Platform.isAndroid || Platform.isIOS) {
+      ScreenBrightness().resetApplicationScreenBrightness();
+    }
     super.dispose();
   }
 

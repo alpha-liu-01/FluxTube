@@ -296,15 +296,24 @@ gboolean video_output_ensure_render_context(VideoOutput* self) {
   // render context freed above, and it does not attach to the new one. It
   // draws nothing until mpv builds a new output, which is why a quality
   // change or the next video showed the picture. Reselect the video track so
-  // mpv builds that output now. Async: populate runs on Flutter's raster
-  // thread and must not wait on mpv's core.
-  const char* no_video = "no";
-  const char* auto_video = "auto";
-  mpv_set_property_async(self->handle, 0, "vid", MPV_FORMAT_STRING,
-                         &no_video);
-  mpv_set_property_async(self->handle, 0, "vid", MPV_FORMAT_STRING,
-                         &auto_video);
-  g_print("media_kit: VideoOutput: video track reselected for new context\n");
+  // mpv builds that output now. populate runs on Flutter's raster thread and
+  // must not wait on mpv's core, so the synchronous calls go to the GTK main
+  // thread. mpv_set_property_async would post replies media_kit never asked
+  // for, and it logs each one as an unregistered ID.
+  g_idle_add(
+      [](gpointer data) -> gboolean {
+        VideoOutput* output = (VideoOutput*)data;
+        if (!output->destroyed) {
+          mpv_set_property_string(output->handle, "vid", "no");
+          mpv_set_property_string(output->handle, "vid", "auto");
+          g_print(
+              "media_kit: VideoOutput: video track reselected for new "
+              "context\n");
+        }
+        g_object_unref(output);
+        return G_SOURCE_REMOVE;
+      },
+      g_object_ref(self));
   return TRUE;
 }
 

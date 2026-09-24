@@ -7,8 +7,14 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 case "$(uname -m)" in
-  x86_64 | amd64) flutter_arch=x64 ;;
-  aarch64 | arm64) flutter_arch=arm64 ;;
+  x86_64 | amd64)
+    flutter_arch=x64
+    pkg_arch=x86_64
+    ;;
+  aarch64 | arm64)
+    flutter_arch=arm64
+    pkg_arch=aarch64
+    ;;
   *)
     echo "Unsupported CPU $(uname -m)." >&2
     exit 1
@@ -101,7 +107,7 @@ Version: ${upstream}
 Release: ${release}
 Summary: Watch videos
 License: GPL-3.0-or-later
-BuildArch: x86_64
+BuildArch: ${pkg_arch}
 Requires: gtk3, mpv-libs
 
 %description
@@ -118,8 +124,8 @@ cp -a %{_sourcedir}/payload/. %{buildroot}/
 /usr/share/icons/hicolor
 EOF
     rpmbuild --define "_topdir ${workdir}/rpm" -bb "${workdir}/rpm/SPECS/fluxtube.spec"
-    rpm="${root}/dist/fluxtube-${upstream}-${release}.x86_64.rpm"
-    cp "${workdir}/rpm/RPMS/x86_64/fluxtube-${upstream}-${release}.x86_64.rpm" "${rpm}"
+    rpm="${root}/dist/fluxtube-${upstream}-${release}.${pkg_arch}.rpm"
+    cp "${workdir}/rpm/RPMS/${pkg_arch}/fluxtube-${upstream}-${release}.${pkg_arch}.rpm" "${rpm}"
     echo "Wrote ${rpm}"
     ;;
   arch)
@@ -134,7 +140,7 @@ pkgname=fluxtube
 pkgver=${upstream}
 pkgrel=${release}
 pkgdesc='Watch videos'
-arch=('x86_64')
+arch=('${pkg_arch}')
 url='https://github.com/fazilvk/fluxtube'
 license=('GPL-3.0-or-later')
 depends=('gtk3' 'mpv')
@@ -148,6 +154,6 @@ EOF
       cd "${workdir}/arch"
       PKGDEST="${root}/dist" makepkg --nodeps --skipinteg --noconfirm
     )
-    echo "Wrote ${root}/dist/fluxtube-${upstream}-${release}-x86_64.pkg.tar.zst"
+    echo "Wrote ${root}/dist/fluxtube-${upstream}-${release}-${pkg_arch}.pkg.tar.zst"
     ;;
 esac

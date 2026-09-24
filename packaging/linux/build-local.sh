@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Install distro packages for a local Linux x64 build, pin Flutter 3.47.1,
-# then run build-release.sh. Package lists are in BUILD.md.
+# Install this distro's packages, pin Flutter 3.47.1, build the release
+# bundle, then write the native package for Debian, Fedora, or Arch.
+# Package lists and filenames are in BUILD.md.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -115,7 +116,6 @@ if [[ "${install_deps}" -eq 1 ]]; then
         done
       fi
       sudo apt-get install -y --no-install-recommends "${debian_install[@]}"
-      install_temurin_17
       ;;
     redhat)
       sudo dnf install -y "${redhat_packages[@]}"
@@ -124,6 +124,7 @@ if [[ "${install_deps}" -eq 1 ]]; then
       sudo pacman -S --needed --noconfirm "${arch_packages[@]}"
       ;;
   esac
+  install_temurin_17
 else
   missing=0
   for cmd in clang cmake ninja make curl git unzip; do

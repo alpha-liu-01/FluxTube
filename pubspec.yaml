@@ -74,6 +74,8 @@ dev_dependencies:
 dependency_overrides:
   media_kit_video:
     path: third_party/media_kit_video
+  media_kit_libs_windows_video:
+    path: third_party/media_kit_libs_windows_video
 
 flutter:
 

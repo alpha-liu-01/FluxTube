@@ -316,8 +316,12 @@ class NewPipeStreamHelper {
 
     if (filtered.isEmpty) return null;
 
-    // Sort and return best
-    final sorted = sortAudioStreams(filtered);
+    // The menu's default track is original. The first open must use that
+    // language, not whichever stream sorts first by container and bitrate.
+    final original = filtered
+        .where((s) => s.isOriginal && !s.isDubbed && !s.isDescriptive)
+        .toList();
+    final sorted = sortAudioStreams(original.isNotEmpty ? original : filtered);
     return sorted.first;
   }
 

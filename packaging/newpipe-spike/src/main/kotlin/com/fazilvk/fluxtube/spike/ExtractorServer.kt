@@ -326,6 +326,10 @@ object ExtractorServer {
             "approxDurationMs" to itagItem?.approxDurationMs,
             "audioChannels" to itagItem?.audioChannels,
             "sampleRate" to itagItem?.sampleRate,
+            "audioTrackId" to stream.audioTrackId,
+            "audioTrackName" to stream.audioTrackName,
+            "audioTrackType" to stream.audioTrackType?.name,
+            "audioLocale" to stream.audioLocale?.toLanguageTag(),
         )
     }
 

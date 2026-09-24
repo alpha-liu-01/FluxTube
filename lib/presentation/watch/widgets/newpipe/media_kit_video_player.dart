@@ -394,17 +394,21 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
 
       switch (config.sourceType) {
         case MediaSourceType.progressive:
-          // Muxed stream (has audio, ≤360p)
+          // Muxed stream (has audio, ≤360p). YouTube's embedded track is
+          // often the viewer's language, so replace it with the menu's track.
           await _player.open(
             Media(config.videoUrl!, httpHeaders: _newPipePlaybackHeaders),
             play: false,
           );
           debugPrint('Opened progressive stream');
+          if (!mounted) return;
+          await _applySelectedAudioTrack();
           break;
 
         case MediaSourceType.merging:
           // Separate video + audio (>360p)
-          final audioUrl = config.audioUrl ?? _selectMediumQualityAudio();
+          final audioUrl =
+              _selectedTrackAudioUrl() ?? config.audioUrl ?? _selectMediumQualityAudio();
 
           // First open video - don't wait for ready here, just open
           await _player.open(
@@ -528,6 +532,31 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
         }
       }
     });
+  }
+
+  /// URL of the track the menu is showing, when one is selected.
+  String? _selectedTrackAudioUrl() {
+    final tracks = _availableAudioTracks;
+    final trackId = _currentAudioTrackId;
+    if (tracks == null || trackId == null) return null;
+    for (final track in tracks) {
+      if (track.trackId != trackId) continue;
+      final url = track.bestStream?.url;
+      if (url != null && url.isNotEmpty) return url;
+    }
+    return null;
+  }
+
+  Future<void> _applySelectedAudioTrack() async {
+    final audioUrl = _selectedTrackAudioUrl();
+    if (audioUrl == null) return;
+    Media(audioUrl, httpHeaders: _newPipePlaybackHeaders);
+    try {
+      await _player.setAudioTrack(AudioTrack.uri(audioUrl));
+      debugPrint('Applied selected audio track');
+    } catch (e) {
+      debugPrint('Error setting selected audio track: $e');
+    }
   }
 
   /// Select a medium-quality ORIGINAL audio stream (around 128kbps)

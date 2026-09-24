@@ -1,9 +1,25 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluxtube/core/colors.dart';
 
 abstract class AppTheme {
+  // Linux Impeller crashes painting a video Texture into a route snapshot.
+  static const PageTransitionsTheme _pageTransitionsTheme =
+      PageTransitionsTheme(
+    builders: <TargetPlatform, PageTransitionsBuilder>{
+      TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+      TargetPlatform.linux: ZoomPageTransitionsBuilder(
+        allowSnapshotting: false,
+      ),
+    },
+  );
+
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
+        pageTransitionsTheme: _pageTransitionsTheme,
         tabBarTheme: TabBarThemeData(indicatorColor: kGreyColor),
         primaryColorLight: kWhiteColor,
         primaryColorDark: kBlackColor,
@@ -29,6 +45,7 @@ abstract class AppTheme {
 
   static ThemeData get darkTheme => ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: _pageTransitionsTheme,
       primaryColorLight: kWhiteColor,
       primaryColorDark: kBlackColor,
       tabBarTheme: TabBarThemeData(indicatorColor: kWhiteColor.withValues(alpha: 0.5)),
@@ -64,6 +81,7 @@ abstract class AppTheme {
 
   static ThemeData get oledTheme => ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: _pageTransitionsTheme,
       brightness: Brightness.dark,
       primaryColorLight: kWhiteColor,
       primaryColorDark: const Color(0xFF000000),
@@ -108,6 +126,7 @@ abstract class AppTheme {
 
   static ThemeData dynamicTheme(ColorScheme colorScheme) => ThemeData(
         useMaterial3: true,
+        pageTransitionsTheme: _pageTransitionsTheme,
         colorScheme: colorScheme,
         tabBarTheme: TabBarThemeData(
             indicatorColor: colorScheme.onSurface.withValues(alpha: 0.6)),

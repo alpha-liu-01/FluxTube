@@ -16,6 +16,7 @@ struct _TextureGL {
   guint32 fbo;
   guint32 current_width;
   guint32 current_height;
+  gboolean populating;
   VideoOutput* video_output;
 };
 
@@ -26,6 +27,7 @@ static void texture_gl_init(TextureGL* self) {
   self->fbo = 0;
   self->current_width = 1;
   self->current_height = 1;
+  self->populating = FALSE;
   self->video_output = NULL;
 }
 
@@ -65,6 +67,17 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
                                      GError** error) {
   TextureGL* self = TEXTURE_GL(texture);
   VideoOutput* video_output = self->video_output;
+  // mpv can invoke the frame callback from inside mpv_render_context_render.
+  // That calls populate again. A second render on the same context corrupts
+  // the heap; the UI thread then dies in malloc.
+  if (self->populating) {
+    *target = GL_TEXTURE_2D;
+    *name = self->name;
+    *width = self->current_width;
+    *height = self->current_height;
+    return TRUE;
+  }
+  self->populating = TRUE;
   static gboolean logged_flutter_context = FALSE;
   if (!logged_flutter_context) {
     logged_flutter_context = TRUE;
@@ -77,18 +90,15 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
   gint32 required_width = (guint32)video_output_get_width(video_output);
   gint32 required_height = (guint32)video_output_get_height(video_output);
   if (required_width > 0 && required_height > 0) {
+    // Bind mpv to Flutter's GLES context before allocating the texture.
+    if (!video_output_ensure_render_context(video_output)) {
+      self->populating = FALSE;
+      return FALSE;
+    }
     gboolean first_frame = self->name == 0 || self->fbo == 0;
-    gboolean resize = self->current_width != required_width ||
-                      self->current_height != required_height;
-    if (first_frame || resize) {
+    if (first_frame) {
       g_print("media_kit: TextureGL: Resize: (%d, %d)\n", required_width,
               required_height);
-      // Free previous texture & FBO.
-      if (!first_frame) {
-        glDeleteTextures(1, &self->name);
-        glDeleteFramebuffers(1, &self->fbo);
-      }
-      // Create new texture & FBO.
       glGenFramebuffers(1, &self->fbo);
       glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
       glGenTextures(1, &self->name);
@@ -97,24 +107,30 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, required_width, required_height,
                    0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-      // Attach the texture to the FBO.
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_TEXTURE_2D, self->name, 0);
-      glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
       self->current_width = required_width;
       self->current_height = required_height;
-      // Notify Flutter about the change in texture's dimensions.
+      video_output_notify_texture_update(video_output);
+    } else if (required_width != (gint32)self->current_width ||
+               required_height != (gint32)self->current_height) {
+      g_print("media_kit: TextureGL: Resize storage: (%d, %d)\n",
+              required_width, required_height);
+      glBindTexture(GL_TEXTURE_2D, self->name);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, required_width, required_height,
+                   0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+      glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                             GL_TEXTURE_2D, self->name, 0);
+      self->current_width = required_width;
+      self->current_height = required_height;
       video_output_notify_texture_update(video_output);
     } else {
       glBindTexture(GL_TEXTURE_2D, self->name);
       glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
     }
-    if (!video_output_ensure_render_context(video_output)) {
-      return FALSE;
-    }
     mpv_render_context* render_context =
         video_output_get_render_context(video_output);
-    // Render the frame.
     mpv_opengl_fbo fbo{(gint32)self->fbo, required_width, required_height, 0};
     mpv_render_param params[] = {
         {MPV_RENDER_PARAM_OPENGL_FBO, &fbo},
@@ -132,6 +148,7 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
   }
+  self->populating = FALSE;
   *target = GL_TEXTURE_2D;
   *name = self->name;
   *width = self->current_width;

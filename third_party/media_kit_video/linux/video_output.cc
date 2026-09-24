@@ -33,6 +33,7 @@ struct _VideoOutput {
   FlTextureRegistrar* texture_registrar;
   gboolean destroyed;
   gboolean flutter_gl_bound;
+  gboolean pending_texture_replace;
 };
 
 G_DEFINE_TYPE(VideoOutput, video_output, G_TYPE_OBJECT)
@@ -292,6 +293,22 @@ gboolean video_output_ensure_render_context(VideoOutput* self) {
       "media_kit: VideoOutput: mpv render context created on Flutter GL "
       "context\n");
   self->flutter_gl_bound = TRUE;
+  // The texture created in this same populate is the one Impeller keeps, and
+  // the first draw on a new mpv context is empty. The next populate allocates
+  // a new texture name, which is what a quality change does by hand.
+  self->pending_texture_replace = TRUE;
+  return TRUE;
+}
+
+gboolean video_output_flutter_gl_bound(VideoOutput* self) {
+  return self->flutter_gl_bound;
+}
+
+gboolean video_output_take_pending_texture_replace(VideoOutput* self) {
+  if (!self->pending_texture_replace) {
+    return FALSE;
+  }
+  self->pending_texture_replace = FALSE;
   return TRUE;
 }
 

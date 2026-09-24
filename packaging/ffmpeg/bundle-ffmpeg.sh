@@ -12,11 +12,14 @@ dest="$(cd "$1" && pwd)"
 release="autobuild-2026-09-22-13-18"
 base="https://github.com/BtbN/FFmpeg-Builds/releases/download/${release}"
 
-case "$(uname -m)" in
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/host-arch.sh"
+host_cpu="$(host_machine)"
+case "${host_cpu}" in
   x86_64 | amd64) ffmpeg_arch=linux64 ;;
   aarch64 | arm64) ffmpeg_arch=linuxarm64 ;;
   *)
-    echo "Unsupported CPU $(uname -m). This script bundles the x64 and aarch64 builds." >&2
+    echo "Unsupported CPU ${host_cpu}. This script bundles the x64 and aarch64 builds." >&2
     exit 1
     ;;
 esac
@@ -27,7 +30,7 @@ case "$(uname -s)" in
     binary_name="ffmpeg"
     ;;
   MINGW* | MSYS* | CYGWIN*)
-    case "$(uname -m)" in
+    case "${host_cpu}" in
       aarch64 | arm64)
         asset="ffmpeg-N-126755-g52f05ac780-winarm64-gpl.zip"
         ;;

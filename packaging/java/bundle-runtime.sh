@@ -12,12 +12,71 @@ fi
 dest="$(cd "$1" && pwd)"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-if ! command -v java >/dev/null 2>&1; then
-  echo "A JDK 17 is required to build the sidecar jar." >&2
-  exit 1
-fi
+# Gradle 8.11.1's Kotlin parser rejects a newer launcher JVM with
+# "What went wrong: <java.version>" and nothing else. ubuntu-26.04 runners
+# default to Java 25 even after openjdk-17 is installed. Compile with 17,
+# which is also the sidecar's toolchain and the bundled runtime.
+java_major() {
+  local line
+  line="$("$1" -version 2>&1 | head -n 1 || true)"
+  if [[ "${line}" =~ \"([0-9]+) ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  fi
+}
 
-echo "Building newpipe-spike.jar"
+java_bin() {
+  if [[ -z "$1" ]]; then
+    return 0
+  fi
+  if [[ -x "$1/bin/java" ]]; then
+    printf '%s\n' "$1/bin/java"
+  elif [[ -x "$1/bin/java.exe" ]]; then
+    printf '%s\n' "$1/bin/java.exe"
+  fi
+}
+
+resolve_jdk17() {
+  local home bin major candidate
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    bin="$(java_bin "${JAVA_HOME}")"
+    if [[ -n "${bin}" && "$(java_major "${bin}")" == "17" ]]; then
+      printf '%s\n' "${JAVA_HOME}"
+      return 0
+    fi
+  fi
+  if [[ -x /usr/libexec/java_home ]]; then
+    home="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
+    bin="$(java_bin "${home}")"
+    if [[ -n "${bin}" && "$(java_major "${bin}")" == "17" ]]; then
+      printf '%s\n' "${home}"
+      return 0
+    fi
+  fi
+  shopt -s nullglob
+  for candidate in /usr/lib/jvm/java-17-openjdk-* /usr/lib/jvm/java-17-openjdk /usr/lib/jvm/temurin-17-*; do
+    bin="$(java_bin "${candidate}")"
+    if [[ -n "${bin}" && "$(java_major "${bin}")" == "17" ]]; then
+      shopt -u nullglob
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+  shopt -u nullglob
+  if command -v java >/dev/null 2>&1 && [[ "$(java_major "$(command -v java)")" == "17" ]]; then
+    bin="$(readlink -f "$(command -v java)")"
+    dirname "$(dirname "${bin}")"
+    return 0
+  fi
+  echo "JDK 17 is required to build the sidecar jar. Gradle 8.11.1 cannot run on the default JVM." >&2
+  java -version >&2 || true
+  return 1
+}
+
+jdk17="$(resolve_jdk17)"
+export JAVA_HOME="${jdk17}"
+export PATH="${JAVA_HOME}/bin:${PATH}"
+
+echo "Building newpipe-spike.jar with ${JAVA_HOME}"
 (
   cd "${root}/packaging/newpipe-spike"
   bash ./gradlew --no-daemon jar

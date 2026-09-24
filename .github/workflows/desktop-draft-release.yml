@@ -60,7 +60,7 @@ jobs:
           if-no-files-found: error
 
   build-windows:
-    name: Build Windows x64 archive
+    name: Build Windows x64 installer
     runs-on: windows-latest
 
     steps:
@@ -88,7 +88,10 @@ jobs:
           version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
-      - name: Build Windows archive
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Windows installer
         shell: pwsh
         run: |
           flutter config --no-analytics --enable-windows-desktop
@@ -97,17 +100,19 @@ jobs:
           bash packaging/java/bundle-runtime.sh "build/windows/x64/runner/Release"
           bash packaging/ffmpeg/bundle-ffmpeg.sh "build/windows/x64/runner/Release"
           $version = "${{ steps.app_version.outputs.version }}"
+          $numeric = $version -replace '\+', '.'
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $archive = "dist/fluxtube-$version-windows-x64.zip"
-          if (Test-Path $archive) { Remove-Item $archive }
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $archive
-          Get-Item $archive | Format-List FullName, Length
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=$version" `
+            "/DVersionInfo=$numeric" `
+            "packaging\windows\fluxtube.iss"
+          Get-Item "dist/fluxtube-$version-windows-x64.exe" | Format-List FullName, Length
 
-      - name: Upload Windows archive
+      - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/fluxtube-*-windows-x64.zip
+          path: dist/fluxtube-*-windows-x64.exe
           if-no-files-found: error
 
   release:
@@ -149,10 +154,10 @@ jobs:
             echo "Automated desktop build for ${GITHUB_SHA}."
             echo
             echo "Included archives:"
-            find dist -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -printf '- %f\n' | sort
+            find dist -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.exe' \) -printf '- %f\n' | sort
             echo
-            echo "Both archives include a headless Java 17 runtime, newpipe-spike.jar, and a static ffmpeg."
-            echo "The Linux archive needs libmpv installed at runtime. ffmpeg is required for merged downloads."
+            echo "The Linux archive and the Windows installer both include a headless Java 17 runtime, newpipe-spike.jar, and a static ffmpeg."
+            echo "The Windows file is an Inno Setup installer. The Linux archive needs libmpv installed at runtime."
             echo
             echo "Recent changes:"
             git log --pretty='- %s (%h)' -20

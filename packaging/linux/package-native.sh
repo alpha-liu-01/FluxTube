@@ -6,7 +6,15 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bundle="${root}/build/linux/x64/release/bundle"
+case "$(uname -m)" in
+  x86_64 | amd64) flutter_arch=x64 ;;
+  aarch64 | arm64) flutter_arch=arm64 ;;
+  *)
+    echo "Unsupported CPU $(uname -m)." >&2
+    exit 1
+    ;;
+esac
+bundle="${root}/build/linux/${flutter_arch}/release/bundle"
 
 if [[ ! -x "${bundle}/fluxtube" ]]; then
   echo "Release bundle is missing ${bundle}/fluxtube. Run build-release.sh first." >&2
@@ -70,13 +78,13 @@ case "${family}" in
     cat > "${workdir}/deb/DEBIAN/control" << EOF
 Package: fluxtube
 Version: ${version}
-Architecture: amd64
+Architecture: $(dpkg --print-architecture)
 Maintainer: FluxTube
 Depends: libgtk-3-0, libmpv2 | libmpv1
 Description: Watch videos
  FluxTube desktop build with a bundled Java runtime and ffmpeg.
 EOF
-    deb="${root}/dist/fluxtube_${version}_amd64.deb"
+    deb="${root}/dist/fluxtube_${version}_$(dpkg --print-architecture).deb"
     dpkg-deb --root-owner-group --build "${workdir}/deb" "${deb}"
     echo "Wrote ${deb}"
     ;;

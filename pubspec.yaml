@@ -76,6 +76,8 @@ dependency_overrides:
     path: third_party/media_kit_video
   media_kit_libs_windows_video:
     path: third_party/media_kit_libs_windows_video
+  volume_controller:
+    path: third_party/volume_controller
 
 flutter:
 

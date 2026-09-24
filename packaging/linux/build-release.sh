@@ -35,7 +35,16 @@ if [[ -n "${FLUXTUBE_DART_DEFINE:-}" ]]; then
 fi
 flutter build linux --release "${dart_define_args[@]}"
 
-bundle="${root}/build/linux/x64/release/bundle"
+case "$(uname -m)" in
+  x86_64 | amd64) flutter_arch=x64 ;;
+  aarch64 | arm64) flutter_arch=arm64 ;;
+  *)
+    echo "Unsupported CPU $(uname -m)." >&2
+    exit 1
+    ;;
+esac
+
+bundle="${root}/build/linux/${flutter_arch}/release/bundle"
 if [[ ! -x "${bundle}/fluxtube" ]]; then
   echo "Release bundle is missing ${bundle}/fluxtube." >&2
   exit 1
@@ -45,9 +54,9 @@ fi
 "${root}/packaging/ffmpeg/bundle-ffmpeg.sh" "${bundle}"
 
 mkdir -p "${root}/dist"
-archive="${root}/dist/fluxtube-${version}-linux-x64.tar.gz"
+archive="${root}/dist/fluxtube-${version}-linux-${flutter_arch}.tar.gz"
 rm -f "${archive}"
-tar -C "${root}/build/linux/x64/release" \
+tar -C "${root}/build/linux/${flutter_arch}/release" \
   --transform 's,^bundle,fluxtube,' \
   -czf "${archive}" \
   bundle

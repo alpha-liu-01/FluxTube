@@ -100,8 +100,9 @@ esac
 
 case "$(uname -m)" in
   x86_64 | amd64) arch=x64 ;;
+  aarch64 | arm64) arch=aarch64 ;;
   *)
-    echo "Unsupported CPU $(uname -m). This script bundles the x64 runtime." >&2
+    echo "Unsupported CPU $(uname -m). This script bundles the x64 and aarch64 runtimes." >&2
     exit 1
     ;;
 esac

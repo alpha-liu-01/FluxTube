@@ -1547,10 +1547,9 @@ packages:
   volume_controller:
     dependency: "direct main"
     description:
-      name: volume_controller
-      sha256: "851b43150972f96fa04a16af1080be9cabcd740c1b7e91dc3f5be9461ff45010"
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/volume_controller"
+      relative: true
+    source: path
     version: "3.6.0"
   wakelock_plus:
     dependency: transitive

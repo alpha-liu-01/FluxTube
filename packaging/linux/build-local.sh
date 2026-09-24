@@ -77,11 +77,45 @@ if [[ -z "${family}" ]]; then
   exit 1
 fi
 
+install_temurin_17() {
+  local arch archive dest
+  case "$(uname -m)" in
+    x86_64 | amd64) arch=x64 ;;
+    aarch64 | arm64) arch=aarch64 ;;
+    *)
+      echo "No Temurin 17 build for $(uname -m)." >&2
+      return 1
+      ;;
+  esac
+  if compgen -G "/usr/lib/jvm/temurin-17-*" >/dev/null || compgen -G "/usr/lib/jvm/java-17-openjdk*" >/dev/null; then
+    return 0
+  fi
+  echo "Installing Eclipse Temurin JDK 17"
+  archive="$(mktemp)"
+  curl -fL --retry 3 -o "${archive}" \
+    "https://api.adoptium.net/v3/binary/latest/17/ga/linux/${arch}/jdk/hotspot/normal/eclipse?project=jdk"
+  sudo mkdir -p /usr/lib/jvm
+  sudo tar -C /usr/lib/jvm -xf "${archive}"
+  rm -f "${archive}"
+  dest="$(echo /usr/lib/jvm/jdk-17*)"
+  sudo ln -sfn "${dest}" /usr/lib/jvm/temurin-17-jdk
+}
+
 if [[ "${install_deps}" -eq 1 ]]; then
   case "${family}" in
     debian)
       sudo apt-get update
-      sudo apt-get install -y --no-install-recommends "${debian_packages[@]}"
+      debian_install=("${debian_packages[@]}")
+      if ! apt-cache show openjdk-17-jdk-headless >/dev/null 2>&1; then
+        debian_install=()
+        for pkg in "${debian_packages[@]}"; do
+          if [[ "${pkg}" != openjdk-17-jdk-headless ]]; then
+            debian_install+=("${pkg}")
+          fi
+        done
+      fi
+      sudo apt-get install -y --no-install-recommends "${debian_install[@]}"
+      install_temurin_17
       ;;
     redhat)
       sudo dnf install -y "${redhat_packages[@]}"
@@ -118,7 +152,7 @@ else
   fi
   if [[ "${has_jdk17}" -eq 0 ]]; then
     shopt -s nullglob
-    for candidate in /usr/lib/jvm/java-17-openjdk-* /usr/lib/jvm/java-17-openjdk; do
+    for candidate in /usr/lib/jvm/java-17-openjdk-* /usr/lib/jvm/java-17-openjdk /usr/lib/jvm/temurin-17-*; do
       if [[ -x "${candidate}/bin/java" ]]; then
         has_jdk17=1
       fi
@@ -155,13 +189,21 @@ if [[ "${actual_flutter}" != "${required_flutter}" ]]; then
   fi
   if [[ "${cached}" != "${required_flutter}" ]]; then
     mkdir -p "${cache}"
-    archive="$(mktemp)"
-    echo "Downloading Flutter ${required_flutter}"
-    curl -fL --retry 3 -o "${archive}" \
-      "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${required_flutter}-stable.tar.xz"
     rm -rf "${sdk}"
-    tar -C "${cache}" -xf "${archive}"
-    rm -f "${archive}"
+    case "$(uname -m)" in
+      aarch64 | arm64)
+        echo "Cloning Flutter ${required_flutter} (no official Linux ARM64 tarball)"
+        git clone --depth 1 --branch "${required_flutter}" https://github.com/flutter/flutter.git "${sdk}"
+        ;;
+      *)
+        archive="$(mktemp)"
+        echo "Downloading Flutter ${required_flutter}"
+        curl -fL --retry 3 -o "${archive}" \
+          "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${required_flutter}-stable.tar.xz"
+        tar -C "${cache}" -xf "${archive}"
+        rm -f "${archive}"
+        ;;
+    esac
   fi
   export PATH="${sdk}/bin:${PATH}"
 fi

@@ -239,9 +239,14 @@ class GlobalPlayerController extends ChangeNotifier {
     log('[GlobalPlayer] Set subtitle code: $subtitleCode');
   }
 
-  /// Set the current video ID - called by media player when playback starts
-  void setCurrentVideoId(String videoId) {
+  /// Set the current video ID - called by media player when playback starts.
+  /// [videoUrl] is the opened video or manifest URL. The floating window
+  /// uses it to decide that a media_kit picture is available.
+  void setCurrentVideoId(String videoId, {String? videoUrl}) {
     _currentVideoId = videoId;
+    if (videoUrl != null && videoUrl.isNotEmpty) {
+      _currentVideoUrl = videoUrl;
+    }
     notifyListeners();
     log('[GlobalPlayer] Set current video ID: $videoId');
   }

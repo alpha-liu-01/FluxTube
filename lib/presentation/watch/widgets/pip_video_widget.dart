@@ -258,8 +258,10 @@ class _PipVideoWidgetState extends State<PipVideoWidget> {
   }
 
   Future<void> _closePip() async {
-    // Stop playback and close PiP
-    if (_globalPlayer.hasActivePlayer) {
+    // Stop playback and close PiP. A media_kit video id is enough: the URL
+    // used to be unset, which skipped this stop and left the audio running.
+    if (_globalPlayer.hasActivePlayer ||
+        _globalPlayer.currentVideoId != null) {
       await _globalPlayer.stopAndClear();
     } else if (Platform.isAndroid) {
       await ExoPlayerNotificationBridge.instance.stop();

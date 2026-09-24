@@ -349,7 +349,9 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
 
       // Update global player controller state for PiP support
       // IMPORTANT: Set video ID BEFORE setupMediaSource so notification can be updated
-      _globalPlayer.setCurrentVideoId(widget.videoId);
+      final openedUrl =
+          _currentConfig!.videoUrl ?? _currentConfig!.manifestUrl;
+      _globalPlayer.setCurrentVideoId(widget.videoId, videoUrl: openedUrl);
 
       // Setup media source
       await _setupMediaSource(

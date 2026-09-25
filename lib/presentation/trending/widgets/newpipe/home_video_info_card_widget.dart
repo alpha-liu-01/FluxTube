@@ -14,6 +14,7 @@ class NewPipeTrendingVideoInfoCardWidget extends StatelessWidget {
     this.isSubscribed = false,
     this.subscribeRowVisible = true,
     this.onSubscribeTap,
+    this.aspectRatioThumbnail = false,
     required this.channelId,
   });
 
@@ -23,41 +24,61 @@ class NewPipeTrendingVideoInfoCardWidget extends StatelessWidget {
   final bool subscribeRowVisible;
   final VoidCallback? onSubscribeTap;
 
+  /// 16:9 thumbnail with no outer horizontal padding, for a multi-column grid.
+  final bool aspectRatioThumbnail;
+
   @override
   Widget build(BuildContext context) {
     final locals = S.of(context);
     final bool isLive = cardInfo?.isLive ?? false;
     final String duration =
         formatDuration(isLive ? -1 : cardInfo?.duration);
+    final thumbnail = Container(
+      margin: aspectRatioThumbnail
+          ? EdgeInsets.zero
+          : const EdgeInsets.only(bottom: 10),
+      width: double.infinity,
+      height: aspectRatioThumbnail ? null : 230,
+      decoration: BoxDecoration(
+        color: kGreyColor,
+        borderRadius: BorderRadius.circular(20),
+        image: cardInfo?.thumbnailUrl != null
+            ? DecorationImage(
+                image: cachedThumbnailProvider(cardInfo!.thumbnailUrl!),
+                fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                  const SizedBox();
+                },
+              )
+            : null,
+      ),
+      child: Align(
+        alignment: const Alignment(0.85, 0.85),
+        child: Container(
+          color: duration == "Live" ? kRedColor : kBlackColor,
+          padding: const EdgeInsets.only(right: 5, left: 5),
+          child: Text(
+            duration,
+            style: const TextStyle(color: kWhiteColor),
+          ),
+        ),
+      ),
+    );
     return Padding(
-      padding: const EdgeInsets.only(top: 5, left: 20, right: 20, bottom: 10),
+      padding: EdgeInsets.only(
+        top: 5,
+        left: aspectRatioThumbnail ? 0 : 20,
+        right: aspectRatioThumbnail ? 0 : 20,
+        bottom: 10,
+      ),
       child: Column(
         children: [
-          Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              width: double.infinity,
-              height: 230,
-              decoration: BoxDecoration(
-                color: kGreyColor,
-                borderRadius: BorderRadius.circular(20),
-                image: cardInfo?.thumbnailUrl != null
-                    ? DecorationImage(
-                        image: cachedThumbnailProvider(cardInfo!.thumbnailUrl!),
-                        fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {
-                          const SizedBox();
-                        })
-                    : null,
-              ),
-              child: Align(
-                  alignment: const Alignment(0.85, 0.85),
-                  child: Container(
-                      color: duration == "Live" ? kRedColor : kBlackColor,
-                      padding: const EdgeInsets.only(right: 5, left: 5),
-                      child: Text(
-                        duration,
-                        style: const TextStyle(color: kWhiteColor),
-                      )))),
+          aspectRatioThumbnail
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: AspectRatio(aspectRatio: 16 / 9, child: thumbnail),
+                )
+              : thumbnail,
           Padding(
             padding: const EdgeInsets.only(right: 12, left: 12),
             child: Column(

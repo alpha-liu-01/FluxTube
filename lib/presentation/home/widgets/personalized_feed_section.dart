@@ -5,6 +5,7 @@ import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/domain/search/models/newpipe/newpipe_search_resp.dart';
 import 'package:fluxtube/domain/subscribes/models/subscribe.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
@@ -115,25 +116,100 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
       }
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth.isFinite
+            ? WindowLayout.cardColumns(constraints.maxWidth)
+            : 1;
+        if (columns == 1) {
+          return _buildVideoList(videos, shorts);
+        }
+        return _buildVideoGrid(videos, shorts, columns);
+      },
+    );
+  }
+
+  Widget _buildVideoList(
+    List<NewPipeSearchItem> videos,
+    List<NewPipeSearchItem> shorts,
+  ) {
     return ListView.separated(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 10),
       separatorBuilder: (context, index) {
-        // Insert shorts section every 5-7 videos
-        if (shorts.isNotEmpty &&
-            index > 0 &&
-            index % 6 == 0 &&
-            index / 6 <= (shorts.length / 5).ceil()) {
-          final shortsStartIndex = ((index ~/ 6) - 1) * 5;
-          final shortsEndIndex = (shortsStartIndex + 5).clamp(0, shorts.length);
-          final shortsToShow = shorts.sublist(
-            shortsStartIndex,
-            shortsEndIndex,
+        final shortsToShow = _shortsAfter(index, shorts);
+        if (shortsToShow != null) {
+          return Column(
+            children: [
+              kHeightBox10,
+              _ShortsSection(
+                shorts: shortsToShow,
+                locals: widget.locals,
+              ),
+              kHeightBox10,
+            ],
           );
+        }
+        return kHeightBox10;
+      },
+      itemCount: videos.length +
+          (widget.trendingState.isLoadingMorePersonalizedFeed ? 2 : 0),
+      itemBuilder: (context, index) {
+        if (index >= videos.length) {
+          return const ShimmerHomeVideoInfoCard();
+        }
+        return _buildVideoCard(videos[index], aspectRatioThumbnail: false);
+      },
+    );
+  }
 
-          if (shortsToShow.isNotEmpty) {
-            return Column(
+  Widget _buildVideoGrid(
+    List<NewPipeSearchItem> videos,
+    List<NewPipeSearchItem> shorts,
+    int columns,
+  ) {
+    final slivers = <Widget>[];
+    final row = <int>[];
+
+    void flushRow() {
+      if (row.isEmpty) return;
+      final indexes = List<int>.from(row);
+      row.clear();
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var column = 0; column < columns; column++) ...[
+                  if (column > 0) const SizedBox(width: 12),
+                  Expanded(
+                    child: column < indexes.length
+                        ? _buildVideoCard(
+                            videos[indexes[column]],
+                            aspectRatioThumbnail: true,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (var index = 0; index < videos.length; index++) {
+      row.add(index);
+      if (row.length == columns) flushRow();
+      final shortsToShow = _shortsAfter(index, shorts);
+      if (shortsToShow != null) {
+        flushRow();
+        slivers.add(
+          SliverToBoxAdapter(
+            child: Column(
               children: [
                 kHeightBox10,
                 _ShortsSection(
@@ -142,90 +218,126 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
                 ),
                 kHeightBox10,
               ],
-            );
-          }
-        }
-        return kHeightBox10;
-      },
-      itemCount: videos.length +
-          (widget.trendingState.isLoadingMorePersonalizedFeed ? 2 : 0),
-      itemBuilder: (context, index) {
-        // Shimmer loading cards at the end
-        if (index >= videos.length) {
-          return const ShimmerHomeVideoInfoCard();
-        }
+            ),
+          ),
+        );
+      }
+    }
+    flushRow();
 
-        final video = videos[index];
-        final videoId =
-            video.videoId ?? video.url?.split('v=').last.split('&').first ?? '';
-        final channelId = video.uploaderUrl?.split('/').last ?? '';
+    if (widget.trendingState.isLoadingMorePersonalizedFeed) {
+      slivers.add(
+        const SliverToBoxAdapter(
+          child: Column(
+            children: [
+              ShimmerHomeVideoInfoCard(),
+              ShimmerHomeVideoInfoCard(),
+            ],
+          ),
+        ),
+      );
+    }
 
-        // Skip if videoId or channelId is empty
-        if (videoId.isEmpty || channelId.isEmpty) {
-          return const SizedBox.shrink();
-        }
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        const SliverPadding(padding: EdgeInsets.only(top: 10)),
+        ...slivers,
+        const SliverPadding(padding: EdgeInsets.only(bottom: 10)),
+      ],
+    );
+  }
 
-        return BlocBuilder<SubscribeBloc, SubscribeState>(
-          builder: (context, subscribeState) {
-            final isSubscribed = subscribeState.subscribedChannels
-                .any((channel) => channel.id == channelId);
+  /// Shorts strip that the one-column separator inserts after [index].
+  List<NewPipeSearchItem>? _shortsAfter(
+    int index,
+    List<NewPipeSearchItem> shorts,
+  ) {
+    if (shorts.isEmpty ||
+        index <= 0 ||
+        index % 6 != 0 ||
+        index / 6 > (shorts.length / 5).ceil()) {
+      return null;
+    }
+    final start = ((index ~/ 6) - 1) * 5;
+    final end = (start + 5).clamp(0, shorts.length);
+    if (start >= end) return null;
+    final slice = shorts.sublist(start, end);
+    if (slice.isEmpty) return null;
+    return slice;
+  }
 
-            return GestureDetector(
-              key: ValueKey('personalized_$videoId'),
-              onTap: () {
-                // Set video basic details for watch screen
-                context.read<WatchBloc>().add(
-                      WatchEvent.setSelectedVideoBasicDetails(
-                        details: VideoBasicInfo(
-                          id: videoId,
-                          title: video.name,
-                          thumbnailUrl: video.thumbnailUrl,
-                          channelName: video.uploaderName,
-                          channelThumbnailUrl: video.uploaderAvatarUrl,
-                          channelId: channelId,
-                          uploaderVerified: video.uploaderVerified ?? false,
+  Widget _buildVideoCard(
+    NewPipeSearchItem video, {
+    required bool aspectRatioThumbnail,
+  }) {
+    final videoId =
+        video.videoId ?? video.url?.split('v=').last.split('&').first ?? '';
+    final channelId = video.uploaderUrl?.split('/').last ?? '';
+
+    if (videoId.isEmpty || channelId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return BlocBuilder<SubscribeBloc, SubscribeState>(
+      builder: (context, subscribeState) {
+        final isSubscribed = subscribeState.subscribedChannels
+            .any((channel) => channel.id == channelId);
+
+        return GestureDetector(
+          key: ValueKey('personalized_$videoId'),
+          onTap: () {
+            context.read<WatchBloc>().add(
+                  WatchEvent.setSelectedVideoBasicDetails(
+                    details: VideoBasicInfo(
+                      id: videoId,
+                      title: video.name,
+                      thumbnailUrl: video.thumbnailUrl,
+                      channelName: video.uploaderName,
+                      channelThumbnailUrl: video.uploaderAvatarUrl,
+                      channelId: channelId,
+                      uploaderVerified: video.uploaderVerified ?? false,
+                    ),
+                  ),
+                );
+
+            context
+                .read<SavedBloc>()
+                .add(SavedEvent.trackVideoWatch(videoId: videoId));
+
+            context.goNamed('watch', pathParameters: {
+              'videoId': videoId,
+              'channelId': channelId,
+            });
+          },
+          child: NewPipeSearchVideoInfoCardWidget(
+            channelId: channelId,
+            cardInfo: video,
+            isSubscribed: isSubscribed,
+            subscribeRowVisible: true,
+            aspectRatioThumbnail: aspectRatioThumbnail,
+            onSubscribeTap: () {
+              if (isSubscribed) {
+                context.read<SubscribeBloc>().add(
+                      SubscribeEvent.deleteSubscribeInfo(id: channelId),
+                    );
+              } else {
+                context.read<SubscribeBloc>().add(
+                      SubscribeEvent.addSubscribe(
+                        channelInfo: Subscribe(
+                          id: channelId,
+                          channelName: video.uploaderName ?? '',
+                          avatarUrl: video.uploaderAvatarUrl,
+                          isVerified: video.uploaderVerified,
+                          profileName: widget.settingsState.currentProfile,
                         ),
+                        profileName: widget.settingsState.currentProfile,
                       ),
                     );
-
-                // Track video watch
-                context
-                    .read<SavedBloc>()
-                    .add(SavedEvent.trackVideoWatch(videoId: videoId));
-
-                context.goNamed('watch', pathParameters: {
-                  'videoId': videoId,
-                  'channelId': channelId,
-                });
-              },
-              child: NewPipeSearchVideoInfoCardWidget(
-                channelId: channelId,
-                cardInfo: video,
-                isSubscribed: isSubscribed,
-                subscribeRowVisible: true,
-                onSubscribeTap: () {
-                  if (isSubscribed) {
-                    context.read<SubscribeBloc>().add(
-                          SubscribeEvent.deleteSubscribeInfo(id: channelId),
-                        );
-                  } else {
-                    context.read<SubscribeBloc>().add(
-                          SubscribeEvent.addSubscribe(
-                            channelInfo: Subscribe(
-                              id: channelId,
-                              channelName: video.uploaderName ?? '',
-                              avatarUrl: video.uploaderAvatarUrl,
-                              isVerified: video.uploaderVerified,
-                              profileName: widget.settingsState.currentProfile,
-                            ),
-                            profileName: widget.settingsState.currentProfile,
-                          ),
-                        );
-                  }
-                },
-              ),
-            );
-          },
+              }
+            },
+          ),
         );
       },
     );

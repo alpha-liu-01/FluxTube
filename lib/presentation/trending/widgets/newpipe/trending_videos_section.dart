@@ -3,7 +3,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/constants.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/domain/subscribes/models/subscribe.dart';
+import 'package:fluxtube/domain/trending/models/newpipe/newpipe_trending_resp.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/trending/widgets/newpipe/home_video_info_card_widget.dart';
@@ -68,75 +70,172 @@ class _NewPipeTrendingVideosSectionState
       buildWhen: (previous, current) =>
           previous.subscribedChannels != current.subscribedChannels,
       builder: (context, subscribeState) {
-        return ListView.separated(
-          controller: _scrollController,
-          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-          separatorBuilder: (context, index) => kHeightBox10,
-          itemBuilder: (context, index) {
-            // Show loading indicator at the end
-            if (index >= itemCount) {
-              return _buildLoadingIndicator(hasMore, isLoading);
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth.isFinite
+                ? WindowLayout.cardColumns(constraints.maxWidth)
+                : 1;
+            if (columns == 1) {
+              return _buildVideoList(
+                subscribeState,
+                itemCount,
+                hasMore,
+                isLoading,
+              );
             }
-
-            final trending = widget.state.newPipeTrendingResult[index];
-            final String? videoId = trending.videoId;
-
-            if (videoId == null || videoId.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final String channelId =
-                trending.uploaderUrl?.split("/").last ?? '';
-
-            if (channelId.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final bool isSubscribed = subscribeState.subscribedChannels
-                .any((channel) => channel.id == channelId);
-            return GestureDetector(
-              key: ValueKey('trending_$videoId'),
-              onTap: () {
-                BlocProvider.of<WatchBloc>(context).add(
-                    WatchEvent.setSelectedVideoBasicDetails(
-                        details: VideoBasicInfo(
-                            id: videoId,
-                            title: trending.name,
-                            thumbnailUrl: trending.thumbnailUrl,
-                            channelName: trending.uploaderName,
-                            channelThumbnailUrl: trending.uploaderAvatarUrl,
-                            channelId: channelId,
-                            uploaderVerified: trending.uploaderVerified)));
-                context.goNamed('watch', pathParameters: {
-                  'videoId': videoId,
-                  'channelId': channelId,
-                });
-              },
-              child: NewPipeTrendingVideoInfoCardWidget(
-                channelId: channelId,
-                cardInfo: trending,
-                isSubscribed: isSubscribed,
-                onSubscribeTap: () {
-                  if (isSubscribed) {
-                    BlocProvider.of<SubscribeBloc>(context)
-                        .add(SubscribeEvent.deleteSubscribeInfo(id: channelId));
-                  } else {
-                    BlocProvider.of<SubscribeBloc>(context).add(
-                        SubscribeEvent.addSubscribe(
-                            channelInfo: Subscribe(
-                                id: channelId,
-                                channelName: trending.uploaderName ??
-                                    widget.locals.noUploaderName,
-                                isVerified:
-                                    trending.uploaderVerified ?? false)));
-                  }
-                },
-              ),
+            return _buildVideoGrid(
+              subscribeState,
+              itemCount,
+              hasMore,
+              isLoading,
+              columns,
             );
           },
-          itemCount: hasMore ? itemCount + 1 : itemCount,
         );
       },
+    );
+  }
+
+  Widget _buildVideoList(
+    SubscribeState subscribeState,
+    int itemCount,
+    bool hasMore,
+    bool isLoading,
+  ) {
+    return ListView.separated(
+      controller: _scrollController,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+      separatorBuilder: (context, index) => kHeightBox10,
+      itemBuilder: (context, index) {
+        if (index >= itemCount) {
+          return _buildLoadingIndicator(hasMore, isLoading);
+        }
+        return _buildVideoCard(
+          widget.state.newPipeTrendingResult[index],
+          subscribeState,
+          aspectRatioThumbnail: false,
+        );
+      },
+      itemCount: hasMore ? itemCount + 1 : itemCount,
+    );
+  }
+
+  Widget _buildVideoGrid(
+    SubscribeState subscribeState,
+    int itemCount,
+    bool hasMore,
+    bool isLoading,
+    int columns,
+  ) {
+    final slivers = <Widget>[];
+    final row = <int>[];
+
+    void flushRow() {
+      if (row.isEmpty) return;
+      final indexes = List<int>.from(row);
+      row.clear();
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var column = 0; column < columns; column++) ...[
+                  if (column > 0) const SizedBox(width: 12),
+                  Expanded(
+                    child: column < indexes.length
+                        ? _buildVideoCard(
+                            widget.state.newPipeTrendingResult[indexes[column]],
+                            subscribeState,
+                            aspectRatioThumbnail: true,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (var index = 0; index < itemCount; index++) {
+      row.add(index);
+      if (row.length == columns) flushRow();
+    }
+    flushRow();
+
+    if (hasMore) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: _buildLoadingIndicator(hasMore, isLoading),
+        ),
+      );
+    }
+
+    return CustomScrollView(
+      controller: _scrollController,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+      slivers: slivers,
+    );
+  }
+
+  Widget _buildVideoCard(
+    NewPipeTrendingResp trending,
+    SubscribeState subscribeState, {
+    required bool aspectRatioThumbnail,
+  }) {
+    final String? videoId = trending.videoId;
+    if (videoId == null || videoId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final String channelId = trending.uploaderUrl?.split("/").last ?? '';
+    if (channelId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final bool isSubscribed = subscribeState.subscribedChannels
+        .any((channel) => channel.id == channelId);
+    return GestureDetector(
+      key: ValueKey('trending_$videoId'),
+      onTap: () {
+        BlocProvider.of<WatchBloc>(context).add(
+            WatchEvent.setSelectedVideoBasicDetails(
+                details: VideoBasicInfo(
+                    id: videoId,
+                    title: trending.name,
+                    thumbnailUrl: trending.thumbnailUrl,
+                    channelName: trending.uploaderName,
+                    channelThumbnailUrl: trending.uploaderAvatarUrl,
+                    channelId: channelId,
+                    uploaderVerified: trending.uploaderVerified)));
+        context.goNamed('watch', pathParameters: {
+          'videoId': videoId,
+          'channelId': channelId,
+        });
+      },
+      child: NewPipeTrendingVideoInfoCardWidget(
+        channelId: channelId,
+        cardInfo: trending,
+        isSubscribed: isSubscribed,
+        aspectRatioThumbnail: aspectRatioThumbnail,
+        onSubscribeTap: () {
+          if (isSubscribed) {
+            BlocProvider.of<SubscribeBloc>(context)
+                .add(SubscribeEvent.deleteSubscribeInfo(id: channelId));
+          } else {
+            BlocProvider.of<SubscribeBloc>(context).add(
+                SubscribeEvent.addSubscribe(
+                    channelInfo: Subscribe(
+                        id: channelId,
+                        channelName: trending.uploaderName ??
+                            widget.locals.noUploaderName,
+                        isVerified: trending.uploaderVerified ?? false)));
+          }
+        },
+      ),
     );
   }
 

@@ -1,11 +1,9 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:fluxtube/core/player/memory_sample.dart';
 import 'package:fluxtube/core/services/pip_service.dart';
 import 'package:fluxtube/core/services/audio_handler_service.dart';
 import 'package:fluxtube/core/services/exoplayer_notification_bridge.dart';
@@ -79,9 +77,7 @@ class GlobalPlayerController extends ChangeNotifier {
         bufferSize: 8 * 1024 * 1024,
       ),
     );
-    if (Platform.environment['FLUXTUBE_MEM_NO_VO'] != '1') {
-      _videoController = _createVideoController(_player!);
-    }
+    _videoController = _createVideoController(_player!);
     _isInitialized = true;
     _tuneNetworkPlayback();
     log('[GlobalPlayer] Player and VideoController initialized eagerly');
@@ -253,7 +249,6 @@ class GlobalPlayerController extends ChangeNotifier {
     }
     notifyListeners();
     log('[GlobalPlayer] Set current video ID: $videoId');
-    sampleMemory('video $videoId');
   }
 
   /// Check if we're already playing (or have paused) the requested video
@@ -449,18 +444,12 @@ class GlobalPlayerController extends ChangeNotifier {
     clearNativeExoPlayerSession();
 
     // If already playing this video, don't reinitialize
-    if (Platform.environment['FLUXTUBE_MEM_REOPEN'] != '1' &&
-        _currentVideoId == videoId &&
+    if (_currentVideoId == videoId &&
         _player != null &&
         _currentVideoUrl == videoUrl) {
       log('[GlobalPlayer] Already playing video $videoId, restoring state');
-      sampleMemory('already-open');
       await restorePlaybackState();
       return true;
-    }
-    sampleMemory('opening');
-    if (Platform.environment['FLUXTUBE_MEM_NEW_PLAYER'] == '1') {
-      disposePlayer();
     }
 
     // STRICT: Final enforcement check before starting playback
@@ -469,9 +458,7 @@ class GlobalPlayerController extends ChangeNotifier {
     try {
       // Create player if needed
       _player ??= Player();
-      if (Platform.environment['FLUXTUBE_MEM_NO_VO'] != '1') {
-        _videoController ??= _createVideoController(player);
-      }
+      _videoController ??= _createVideoController(player);
 
       final headers = httpHeaders ??
           {
@@ -479,104 +466,11 @@ class GlobalPlayerController extends ChangeNotifier {
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           };
 
-      if (Platform.environment['FLUXTUBE_MEM_YTDL_NO'] == '1') {
-        try {
-          await (_player!.platform as dynamic).setProperty('ytdl', 'no');
-        } catch (e) {
-          log('[GlobalPlayer] Could not disable ytdl: $e');
-        }
-      }
-      if (Platform.environment['FLUXTUBE_MEM_VID_NO'] == '1') {
-        try {
-          await (_player!.platform as dynamic).setProperty('vid', 'no');
-        } catch (e) {
-          log('[GlobalPlayer] Could not disable video decode: $e');
-        }
-      }
-      if (Platform.environment['FLUXTUBE_MEM_AID_NO'] == '1') {
-        try {
-          await (_player!.platform as dynamic).setProperty('aid', 'no');
-        } catch (e) {
-          log('[GlobalPlayer] Could not disable audio decode: $e');
-        }
-      }
-      if (Platform.environment['FLUXTUBE_MEM_DEMUX_CAP'] == '1') {
-        try {
-          await (_player!.platform as dynamic)
-              .setProperty('demuxer-max-bytes', '1048576');
-        } catch (e) {
-          log('[GlobalPlayer] Could not cap demuxer: $e');
-        }
-      }
-      final cacheOff = Platform.environment['FLUXTUBE_MEM_CACHE_OFF'];
-      if (cacheOff != null && cacheOff.isNotEmpty) {
-        try {
-          final platform = _player!.platform as dynamic;
-          if (cacheOff == '1' || cacheOff == 'cache') {
-            await platform.setProperty('cache', 'no');
-          }
-          if (cacheOff == '1' || cacheOff == 'ahead' || cacheOff == 'window') {
-            await platform.setProperty('demuxer-readahead-secs', '0');
-          }
-          if (cacheOff == '1' || cacheOff == 'back' || cacheOff == 'window') {
-            await platform.setProperty('demuxer-max-back-bytes', '0');
-          }
-          if (cacheOff == 'tiny') {
-            await platform.setProperty('demuxer-max-bytes', '65536');
-            await platform.setProperty('demuxer-max-back-bytes', '65536');
-          }
-          if (cacheOff == 'release') {
-            await platform.setProperty('cache', 'no');
-            await platform.setProperty('demuxer-readahead-secs', '0');
-            await platform.setProperty('demuxer-max-back-bytes', '0');
-            await _player!.stop();
-            await platform.setProperty('cache', 'auto');
-            await platform.setProperty('demuxer-readahead-secs', '1');
-            await platform.setProperty('demuxer-max-back-bytes', '52428800');
-          }
-          if (cacheOff == 'disk') {
-            await platform.setProperty('cache-on-disk', 'no');
-          }
-        } catch (e) {
-          log('[GlobalPlayer] Could not disable stream cache: $e');
-        }
-      }
-      if (Platform.environment['FLUXTUBE_MEM_AO_NULL'] == '1') {
-        try {
-          final platform = _player!.platform as dynamic;
-          await platform.setProperty('ao', 'null');
-          await platform.setProperty('vo', 'null');
-        } catch (e) {
-          log('[GlobalPlayer] Could not set null outputs: $e');
-        }
-      }
-      final localProbe = Platform.environment['FLUXTUBE_MEM_LOCAL_FILE'];
-      if (localProbe != null && localProbe.startsWith('https://')) {
-        try {
-          await (_player!.platform as dynamic).setProperty('tls-verify', 'no');
-        } catch (e) {
-          log('[GlobalPlayer] Could not disable tls verify: $e');
-        }
-      }
-
-      if (Platform.environment['FLUXTUBE_MEM_DROP_BUFFERS'] == '1') {
-        try {
-          await (_player!.platform as dynamic).command(['drop-buffers']);
-        } catch (e) {
-          log('[GlobalPlayer] Could not drop buffers: $e');
-        }
-      }
-      if (Platform.environment['FLUXTUBE_MEM_LOADFILE'] == '1') {
-        final native = _player!.platform as dynamic;
-        await native.command(['stop']);
-        await native.command(['loadfile', videoUrl, 'replace']);
-      } else {
-        // Open the video
-        await _player!.open(
-          Media(videoUrl, httpHeaders: headers),
-          play: false,
-        );
-      }
+      // Open the video
+      await _player!.open(
+        Media(videoUrl, httpHeaders: headers),
+        play: false,
+      );
 
       // Set audio track if provided
       if (audioUrl != null && audioUrl.isNotEmpty) {
@@ -595,10 +489,8 @@ class GlobalPlayerController extends ChangeNotifier {
         log('[GlobalPlayer] Seeked to $seekToSeconds s');
       }
 
-      // Start playback unless this process is measuring open() alone.
-      if (Platform.environment['FLUXTUBE_MEM_NO_PLAY'] != '1') {
-        await _player!.play();
-      }
+      // Start playback
+      await _player!.play();
 
       // Update state
       _currentVideoId = videoId;
@@ -610,9 +502,7 @@ class GlobalPlayerController extends ChangeNotifier {
       // Notify native side that video is playing (for auto-PiP)
       await _pipService.setVideoPlaying(true);
 
-      if (Platform.environment['FLUXTUBE_MEM_NO_NOTIFY'] != '1') {
-        notifyListeners();
-      }
+      notifyListeners();
       log('[GlobalPlayer] Initialized video $videoId');
       return true;
     } catch (e) {
@@ -727,7 +617,6 @@ class GlobalPlayerController extends ChangeNotifier {
         // did not shrink the per-video resident-size climb.
         await _player!.open(Media(''));
         log('[GlobalPlayer] Player stopped and reset');
-        sampleMemory('stop-clear-empty-open');
       } catch (e) {
         log('[GlobalPlayer] Error during stop: $e');
       }

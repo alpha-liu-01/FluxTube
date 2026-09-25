@@ -16,6 +16,7 @@ import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import org.schabi.newpipe.extractor.search.SearchInfo
+import org.schabi.newpipe.extractor.services.youtube.YoutubeJavaScriptPlayerManager
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
@@ -298,10 +299,15 @@ object ExtractorServer {
         if (cached != null && now - cached.timestampMs <= cacheTtlMs) {
             return cached.streamInfo
         }
+        // One live video. Drop the previous id before the next extract allocates.
+        streamInfoCache.clear()
         val info = StreamInfo.getInfo(
             ServiceList.YouTube,
             "https://www.youtube.com/watch?v=$videoId",
         )
+        // URLs on `info` are already deobfuscated. The n-parameter map is only
+        // reused inside that extract, and it has no cap.
+        YoutubeJavaScriptPlayerManager.clearThrottlingParametersCache()
         streamInfoCache[videoId] = CachedStreamInfo(info, now)
         return info
     }

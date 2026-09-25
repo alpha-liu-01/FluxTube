@@ -8,9 +8,11 @@ import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
 import 'package:fluxtube/core/player/playback_queue.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
+import 'package:fluxtube/domain/watch/models/newpipe/newpipe_watch_resp.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/watch/widgets/newpipe/exoplayer_video_player.dart';
 import 'package:fluxtube/presentation/watch/widgets/newpipe/media_kit_video_player.dart';
@@ -43,6 +45,9 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   bool _showPlayer = false;
   // Track the video ID for which the player is shown
   String? _playerVideoId;
+  // Survives a layout change. Replaced only when the video id changes.
+  GlobalKey _playerKey = GlobalKey();
+  GlobalKey _commentKey = GlobalKey();
   void _enterAppPipAndPop() {
     GlobalPlayerController().enterPipMode();
     BlocProvider.of<WatchBloc>(context).add(WatchEvent.togglePip(value: true));
@@ -111,6 +116,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
       _evictRelatedThumbnails();
       debugPrint(
           '[NewPipeScreenWatch] Video ID changed from ${oldWidget.id} to ${widget.id}');
+      _playerKey = GlobalKey();
+      _commentKey = GlobalKey();
       // Reset player visibility for new video
       setState(() {
         _showPlayer = false;
@@ -331,16 +338,81 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                         },
                         child: Scaffold(
                           body: SafeArea(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  // Show player if:
-                                  // 1. Watch info is loaded for this video, OR
-                                  // 2. Returning from PiP (player has this video with data)
-                                  // CRITICAL: Once player is shown, keep it shown to prevent
-                                  // disposal during BlocBuilder rebuilds
-                                  Builder(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final split = constraints.maxWidth.isFinite &&
+                                    WindowLayout.useWatchSplit(
+                                        constraints.maxWidth);
+                                final player = _buildPlayer(
+                                  state,
+                                  savedState,
+                                  settingsState,
+                                );
+                                final details = _buildDetails(
+                                  state: state,
+                                  settingsState: settingsState,
+                                  locals: locals,
+                                  height: height,
+                                  watchInfo: watchInfo,
+                                  wide: split,
+                                );
+                                final page = SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      player,
+                                      details,
+                                    ],
+                                  ),
+                                );
+                                if (!split) return page;
+                                final showSide = state.isTapComments ||
+                                    !settingsState.isHideRelated;
+                                if (!showSide) return page;
+                                return Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(flex: 7, child: page),
+                                    Expanded(
+                                      flex: 3,
+                                      child: _buildSide(
+                                        state: state,
+                                        locals: locals,
+                                        height: height,
+                                        watchInfo: watchInfo,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPlayer(
+    WatchState state,
+    SavedState savedState,
+    SettingsState settingsState,
+  ) {
+    // Show player if:
+    // 1. Watch info is loaded for this video, OR
+    // 2. Returning from PiP (player has this video with data)
+    // CRITICAL: Once player is shown, keep it shown to prevent
+    // disposal during BlocBuilder rebuilds
+    return Builder(
                                     builder: (context) {
                                       final useNativePlayer = !kIsWeb &&
                                           defaultTargetPlatform ==
@@ -408,10 +480,9 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                                           .isAutoPipEnabled,
                                                 )
                                               : NewPipeMediaKitPlayer(
-                                                  // CRITICAL: Use ValueKey to prevent widget recreation
-                                                  // when watchInfo updates. Only recreate on videoId change.
-                                                  key: ValueKey(
-                                                      'player_${widget.id}'),
+                                                  // Replaced only when the video id changes, so a
+                                                  // resize keeps this player's state.
+                                                  key: _playerKey,
                                                   videoId: widget.id,
                                                   watchInfo:
                                                       state.newPipeWatchResp,
@@ -450,8 +521,20 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                               ),
                                             );
                                     },
-                                  ),
-                                  Padding(
+                                  );
+  }
+
+  Widget _buildDetails({
+    required WatchState state,
+    required SettingsState settingsState,
+    required S locals,
+    required double height,
+    required NewPipeWatchResp watchInfo,
+    required bool wide,
+  }) {
+    final loading = state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+        state.fetchNewPipeWatchInfoStatus == ApiStatus.loading;
+    return Padding(
                                     padding: const EdgeInsets.only(
                                         top: 12, left: 20, right: 20),
                                     child: Column(
@@ -525,62 +608,105 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                             : NewPipeChannelInfoSection(
                                                 state: state,
                                                 watchInfo: watchInfo,
-                                                locals: locals),
-                                        if (!state.isTapComments)
+                                                locals: locals,
+                                                keepVisible: wide),
+                                        if (wide || !state.isTapComments)
                                           const Divider(),
                                         kHeightBox10,
-                                        state.isDescriptionTapped
-                                            ? NewPipeDescriptionSection(
-                                                height: height,
-                                                watchInfo: watchInfo,
-                                                locals: locals)
-                                            : state.isTapComments == false
-                                                ? (settingsState.isHideRelated)
-                                                    ? const SizedBox()
-                                                    : (state.fetchNewPipeWatchInfoStatus ==
-                                                                ApiStatus
-                                                                    .initial ||
-                                                            state.fetchNewPipeWatchInfoStatus ==
-                                                                ApiStatus
-                                                                    .loading)
-                                                        ? ListView.builder(
-                                                            shrinkWrap: true,
-                                                            physics:
-                                                                const NeverScrollableScrollPhysics(),
-                                                            itemCount: 3,
-                                                            itemBuilder:
-                                                                (context,
-                                                                    index) {
-                                                              return const ShimmerRelatedVideoWidget();
-                                                            },
-                                                          )
-                                                        : NewPipeRelatedVideoSection(
-                                                            locals: locals,
-                                                            watchInfo:
-                                                                watchInfo)
-                                                : NewPipeCommentSection(
-                                                    videoId: widget.id,
-                                                    state: state,
-                                                    height: height,
-                                                    locals: locals,
-                                                  ),
+                                        if (wide)
+                                          state.isDescriptionTapped
+                                              ? NewPipeDescriptionSection(
+                                                  height: height,
+                                                  watchInfo: watchInfo,
+                                                  locals: locals,
+                                                  limitHeight: false,
+                                                )
+                                              : const SizedBox()
+                                        else
+                                          _buildNarrowStream(
+                                            state: state,
+                                            settingsState: settingsState,
+                                            locals: locals,
+                                            height: height,
+                                            watchInfo: watchInfo,
+                                            loading: loading,
+                                          ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                },
-              );
-            },
-          );
+                                  );
+  }
+
+  Widget _buildNarrowStream({
+    required WatchState state,
+    required SettingsState settingsState,
+    required S locals,
+    required double height,
+    required NewPipeWatchResp watchInfo,
+    required bool loading,
+  }) {
+    if (state.isDescriptionTapped) {
+      return NewPipeDescriptionSection(
+        height: height,
+        watchInfo: watchInfo,
+        locals: locals,
+      );
+    }
+    if (!state.isTapComments) {
+      if (settingsState.isHideRelated) return const SizedBox();
+      if (loading) {
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 3,
+          itemBuilder: (context, index) {
+            return const ShimmerRelatedVideoWidget();
+          },
+        );
+      }
+      return NewPipeRelatedVideoSection(
+        locals: locals,
+        watchInfo: watchInfo,
+      );
+    }
+    return NewPipeCommentSection(
+      key: _commentKey,
+      videoId: widget.id,
+      state: state,
+      height: height,
+      locals: locals,
+    );
+  }
+
+  Widget _buildSide({
+    required WatchState state,
+    required S locals,
+    required double height,
+    required NewPipeWatchResp watchInfo,
+  }) {
+    final loading = state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+        state.fetchNewPipeWatchInfoStatus == ApiStatus.loading;
+    if (state.isTapComments) {
+      return NewPipeCommentSection(
+        key: _commentKey,
+        fillColumn: true,
+        videoId: widget.id,
+        state: state,
+        height: height,
+        locals: locals,
+      );
+    }
+    if (loading) {
+      return ListView.builder(
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return const ShimmerRelatedVideoWidget();
         },
-      ),
+      );
+    }
+    return NewPipeRelatedVideoSection(
+      fillColumn: true,
+      locals: locals,
+      watchInfo: watchInfo,
     );
   }
 

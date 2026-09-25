@@ -20,10 +20,14 @@ class NewPipeRelatedVideoSection extends StatelessWidget {
     super.key,
     required this.locals,
     required this.watchInfo,
+    this.fillColumn = false,
   });
 
   final S locals;
   final NewPipeWatchResp watchInfo;
+
+  /// Shorts stay at the top and the related list scrolls the rest of the column.
+  final bool fillColumn;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,15 @@ class NewPipeRelatedVideoSection extends StatelessWidget {
 
         // Related Videos section
         if (videos.isNotEmpty)
-          _RelatedVideosSection(videos: videos, locals: locals),
+          fillColumn
+              ? Expanded(
+                  child: _RelatedVideosSection(
+                    videos: videos,
+                    locals: locals,
+                    fillColumn: true,
+                  ),
+                )
+              : _RelatedVideosSection(videos: videos, locals: locals),
       ],
     );
   }
@@ -394,10 +406,12 @@ class _RelatedVideosSection extends StatelessWidget {
   const _RelatedVideosSection({
     required this.videos,
     required this.locals,
+    this.fillColumn = false,
   });
 
   final List<NewPipeRelatedStream> videos;
   final S locals;
+  final bool fillColumn;
 
   @override
   Widget build(BuildContext context) {
@@ -462,19 +476,25 @@ class _RelatedVideosSection extends StatelessWidget {
         AppSpacing.height16,
 
         // Videos list - Large card layout
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: videos.length,
-          itemBuilder: (context, index) {
-            return _LargeVideoCard(
-              video: videos[index],
-              index: index,
-              locals: locals,
-            );
-          },
-        ),
+        fillColumn
+            ? Expanded(child: _relatedList())
+            : _relatedList(),
       ],
+    );
+  }
+
+  Widget _relatedList() {
+    return ListView.builder(
+      shrinkWrap: !fillColumn,
+      physics: fillColumn ? null : const NeverScrollableScrollPhysics(),
+      itemCount: videos.length,
+      itemBuilder: (context, index) {
+        return _LargeVideoCard(
+          video: videos[index],
+          index: index,
+          locals: locals,
+        );
+      },
     );
   }
 }

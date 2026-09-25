@@ -14,16 +14,20 @@ class NewPipeChannelInfoSection extends StatelessWidget {
     required this.watchInfo,
     required this.locals,
     required this.state,
+    this.keepVisible = false,
   });
 
   final NewPipeWatchResp watchInfo;
   final S locals;
   final WatchState state;
 
+  /// Wide layout keeps the channel row while comments sit in the side column.
+  final bool keepVisible;
+
   @override
   Widget build(BuildContext context) {
     return Visibility(
-      visible: !state.isTapComments,
+      visible: keepVisible || !state.isTapComments,
       child: BlocBuilder<SubscribeBloc, SubscribeState>(
         builder: (context, subscribeState) {
           final String? channelId = _extractChannelId(watchInfo.uploaderUrl);

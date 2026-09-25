@@ -23,12 +23,16 @@ class NewPipeCommentSection extends StatefulWidget {
     required this.height,
     required this.locals,
     required this.videoId,
+    this.fillColumn = false,
   });
 
   final WatchState state;
   final double height;
   final S locals;
   final String videoId;
+
+  /// Fill the side column and scroll the list. Narrow keeps the 55% cap.
+  final bool fillColumn;
 
   @override
   State<NewPipeCommentSection> createState() => _NewPipeCommentSectionState();
@@ -73,8 +77,12 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      constraints: BoxConstraints(maxHeight: widget.height * 0.55),
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      constraints: widget.fillColumn
+          ? null
+          : BoxConstraints(maxHeight: widget.height * 0.55),
+      margin: widget.fillColumn
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -94,12 +102,29 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              widget.fillColumn ? MainAxisSize.max : MainAxisSize.min,
           children: [
             // Header
             _buildHeader(theme, isDark),
             // Comments list
-            Flexible(
+            widget.fillColumn
+                ? Expanded(
+                    child: BlocBuilder<WatchBloc, WatchState>(
+                      buildWhen: (previous, current) =>
+                          previous.fetchNewPipeCommentsStatus !=
+                              current.fetchNewPipeCommentsStatus ||
+                          previous.fetchMoreNewPipeCommentsStatus !=
+                              current.fetchMoreNewPipeCommentsStatus ||
+                          previous.newPipeComments != current.newPipeComments ||
+                          previous.isMoreNewPipeCommentsFetchCompleted !=
+                              current.isMoreNewPipeCommentsFetchCompleted,
+                      builder: (context, state) {
+                        return _buildCommentsList(theme, isDark, state);
+                      },
+                    ),
+                  )
+                : Flexible(
               child: BlocBuilder<WatchBloc, WatchState>(
                 buildWhen: (previous, current) =>
                     previous.fetchNewPipeCommentsStatus != current.fetchNewPipeCommentsStatus ||
@@ -235,7 +260,7 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      shrinkWrap: true,
+      shrinkWrap: !widget.fillColumn,
       itemCount: comments.length + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < comments.length) {

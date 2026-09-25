@@ -11,24 +11,28 @@ class NewPipeDescriptionSection extends StatelessWidget {
     required double height,
     required this.watchInfo,
     required this.locals,
+    this.limitHeight = true,
   }) : _height = height;
 
   final double _height;
   final NewPipeWatchResp watchInfo;
   final S locals;
 
+  /// The narrow page boxes the description at 40% of the screen.
+  final bool limitHeight;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final description = watchInfo.description ?? locals.noVideoDescription;
+    final text = SelectableText.rich(
+      _buildDescriptionSpan(context, description, theme),
+    );
+    if (!limitHeight) return text;
 
     return SizedBox(
       height: _height * 0.40,
-      child: SingleChildScrollView(
-        child: SelectableText.rich(
-          _buildDescriptionSpan(context, description, theme),
-        ),
-      ),
+      child: SingleChildScrollView(child: text),
     );
   }
 

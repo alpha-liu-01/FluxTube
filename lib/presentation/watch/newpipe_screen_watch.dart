@@ -69,10 +69,16 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     if (related == null) return;
     final cache = PaintingBinding.instance.imageCache;
     for (final stream in related) {
-      final url = stream.thumbnailUrl;
-      if (url == null || url.isEmpty) continue;
-      cache.evict(CachedNetworkImageProvider(url, maxWidth: 320));
+      _evictSmallThumbnail(cache, stream.thumbnailUrl);
+      _evictSmallThumbnail(cache, stream.uploaderAvatarUrl);
     }
+  }
+
+  void _evictSmallThumbnail(ImageCache cache, String? url) {
+    if (url == null || url.isEmpty) return;
+    // ThumbnailImage.small stores ResizeImage(provider, width: 320), not a
+    // provider whose maxWidth is 320.
+    cache.evict(ResizeImage(CachedNetworkImageProvider(url), width: 320));
   }
 
   @override
@@ -160,7 +166,9 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     final currentPlayingId = globalPlayer.currentVideoId;
 
     // If a different video is playing, stop it first
-    if (currentPlayingId != null && currentPlayingId != widget.id) {
+    if (currentPlayingId != null &&
+        currentPlayingId != widget.id &&
+        Platform.environment['FLUXTUBE_MEM_SKIP_STOP'] != '1') {
       debugPrint(
           '[NewPipeScreenWatch] Stopping previous video: $currentPlayingId (starting: ${widget.id})');
       await globalPlayer.stopAndClear();
@@ -190,22 +198,26 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
       ));
     }
 
+    final skipSideFetch =
+        Platform.environment['FLUXTUBE_MEM_SKIP_SIDE_FETCH'] == '1';
     // Saved state and subscription check can run in parallel
     // Only fetch all videos list if not returning from PiP
-    if (!isReturningFromPip) {
+    if (!isReturningFromPip && !skipSideFetch) {
       savedBloc
           .add(SavedEvent.getAllVideoInfoList(profileName: currentProfile));
     }
 
     // Only check video info if we don't already have it for this video
     // This prevents flickering when returning from PiP
-    if (savedBloc.state.videoInfo?.id != widget.id) {
+    if (savedBloc.state.videoInfo?.id != widget.id && !skipSideFetch) {
       savedBloc.add(SavedEvent.checkVideoInfo(
           id: widget.id, profileName: currentProfile));
     }
 
-    subscribeBloc.add(SubscribeEvent.checkSubscribeInfo(
-        id: widget.channelId, profileName: currentProfile));
+    if (!skipSideFetch) {
+      subscribeBloc.add(SubscribeEvent.checkSubscribeInfo(
+          id: widget.channelId, profileName: currentProfile));
+    }
   }
 
   @override

@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'dart:ffi';
+
+import 'package:fluxtube/core/player/global_player_controller.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -11,17 +14,25 @@ void sampleMemory(String label, {bool detailed = false}) {
   if (!Platform.isLinux) return;
   final cache = PaintingBinding.instance.imageCache;
   var rss = '';
+  var threads = '';
   try {
     for (final line in File('/proc/self/status').readAsLinesSync()) {
-      if (line.startsWith('VmRSS:')) {
-        rss = line.trim();
+      if (line.startsWith('VmRSS:')) rss = line.trim();
+      if (line.startsWith('Threads:')) threads = line.trim();
+    }
+  } catch (_) {}
+  var anonRollup = '';
+  try {
+    for (final line in File('/proc/self/smaps_rollup').readAsLinesSync()) {
+      if (line.startsWith('Anonymous:')) {
+        anonRollup = line.trim();
         break;
       }
     }
   } catch (_) {}
   final detail = detailed ? ' ${smapsSummary()}' : '';
   final entry =
-      '${DateTime.now().toIso8601String()} $label images=${cache.currentSize} imageBytes=${cache.currentSizeBytes} $rss$detail\n';
+      '${DateTime.now().toIso8601String()} $label images=${cache.currentSize} imageBytes=${cache.currentSizeBytes} $rss $threads $anonRollup$detail\n';
   try {
     File(memoryLogPath).writeAsStringSync(entry, mode: FileMode.append);
   } catch (_) {}
@@ -36,7 +47,7 @@ String smapsSummary() {
     'mpv': 0,
     'other': 0,
   };
-  final largeAnon = <int>[];
+  final largeAnon = <String>[];
   String? name;
   var rss = 0;
   void add() {
@@ -53,7 +64,10 @@ String smapsSummary() {
                         ? 'mpv'
                         : 'other';
     totals[key] = totals[key]! + rss;
-    if (key == 'anon' && rss >= 1024) largeAnon.add(rss);
+    if (key == 'anon' && rss >= 1024) {
+      final tag = (name == null || name!.isEmpty) ? 'anon' : name!;
+      largeAnon.add('$rss:$tag');
+    }
   }
 
   try {
@@ -88,6 +102,7 @@ void startMemoryProbe(
   if (Platform.environment['FLUXTUBE_MEM_PROBE'] != '1') return;
   final playerOnly = Platform.environment['FLUXTUBE_MEM_PLAYER_ONLY'] == '1';
   final sameUrl = Platform.environment['FLUXTUBE_MEM_SAME_URL'] == '1';
+  final noNav = Platform.environment['FLUXTUBE_MEM_NO_NAV'] == '1';
   const ids = [
     'jNQXAC9IVRw',
     'dQw4w9WgXcQ',
@@ -98,19 +113,21 @@ void startMemoryProbe(
     'fJ9rUzIMcZQ',
     'CevxZvSJLk8',
   ];
+  final tight = Platform.environment['FLUXTUBE_MEM_TIGHT'] == '1';
+  final gap = Duration(seconds: tight ? 1 : 20);
   unawaited(() async {
     sampleMemory('probe-start');
     for (var i = 0; i < ids.length; i++) {
-      await Future<void>.delayed(const Duration(seconds: 20));
+      await Future<void>.delayed(gap);
       if (!context.mounted) return;
       sampleMemory('before-video-${i + 1}');
       if (playerOnly) {
         await playVideoOnly(sameUrl ? ids[0] : ids[i]);
-      } else {
+      } else if (!noNav) {
         context.go('/main/watch/${ids[i]}/memprobe');
       }
       if (i == 0 || i == ids.length - 1) {
-        await Future<void>.delayed(const Duration(seconds: 12));
+        await Future<void>.delayed(Duration(seconds: tight ? 1 : 12));
         if (!context.mounted) return;
         var cache = 'unread';
         try {
@@ -121,7 +138,19 @@ void startMemoryProbe(
         sampleMemory('after-video-${i + 1} demuxer=$cache', detailed: true);
       }
     }
-    await Future<void>.delayed(const Duration(seconds: 25));
+    await Future<void>.delayed(Duration(seconds: tight ? 1 : 25));
+    if (Platform.environment['FLUXTUBE_MEM_TRIM'] == '1') {
+      DynamicLibrary.open('libc.so.6')
+          .lookupFunction<Int32 Function(Uint64), int Function(int)>(
+              'malloc_trim')(0);
+      await Future<void>.delayed(const Duration(seconds: 1));
+      sampleMemory('after-trim', detailed: true);
+    }
+    if (Platform.environment['FLUXTUBE_MEM_DISPOSE_END'] == '1') {
+      GlobalPlayerController().disposePlayer();
+      await Future<void>.delayed(const Duration(seconds: 8));
+      sampleMemory('after-dispose', detailed: true);
+    }
     sampleMemory('probe-end');
   }());
 }

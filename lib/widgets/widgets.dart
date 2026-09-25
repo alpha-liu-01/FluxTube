@@ -1,3 +1,4 @@
+export 'card_row.dart';
 export 'channel_widget.dart';
 export 'thumbnail_image.dart';
 export 'common_video_description_widget.dart';

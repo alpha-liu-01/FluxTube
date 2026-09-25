@@ -413,115 +413,81 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     // CRITICAL: Once player is shown, keep it shown to prevent
     // disposal during BlocBuilder rebuilds
     return Builder(
-                                    builder: (context) {
-                                      final useNativePlayer = !kIsWeb &&
-                                          defaultTargetPlatform ==
-                                              TargetPlatform.android;
+      builder: (context) {
+        final useNativePlayer =
+            !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-                                      // Check if we should show the player
-                                      final shouldShowPlayer = _showPlayer &&
-                                          _playerVideoId == widget.id;
-                                      final hasLoadedWatchInfo =
-                                          state.fetchNewPipeWatchInfoStatus ==
-                                                  ApiStatus.loaded &&
-                                              state.newPipeWatchResp.id ==
-                                                  widget.id;
-                                      final canShowPlayer =
-                                          hasLoadedWatchInfo ||
-                                              (!useNativePlayer &&
-                                                  GlobalPlayerController()
-                                                      .hasVideoLoaded(
-                                                          widget.id));
+        // Check if we should show the player
+        final shouldShowPlayer = _showPlayer && _playerVideoId == widget.id;
+        final hasLoadedWatchInfo =
+            state.fetchNewPipeWatchInfoStatus == ApiStatus.loaded &&
+                state.newPipeWatchResp.id == widget.id;
+        final canShowPlayer = hasLoadedWatchInfo ||
+            (!useNativePlayer &&
+                GlobalPlayerController().hasVideoLoaded(widget.id));
 
-                                      // Once we can show the player, set _showPlayer to true
-                                      // This ensures the player stays in the tree during rebuilds
-                                      if (canShowPlayer && !shouldShowPlayer) {
-                                        WidgetsBinding.instance
-                                            .addPostFrameCallback((_) {
-                                          if (mounted && !_showPlayer) {
-                                            setState(() {
-                                              _showPlayer = true;
-                                              _playerVideoId = widget.id;
-                                            });
-                                          }
-                                        });
-                                      }
+        // Once we can show the player, set _showPlayer to true
+        // This ensures the player stays in the tree during rebuilds
+        if (canShowPlayer && !shouldShowPlayer) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_showPlayer) {
+              setState(() {
+                _showPlayer = true;
+                _playerVideoId = widget.id;
+              });
+            }
+          });
+        }
 
-                                      // Show player if either condition is true
-                                      return (shouldShowPlayer || canShowPlayer)
-                                          ? useNativePlayer
-                                              ? NewPipeExoPlayer(
-                                                  key: ValueKey(
-                                                      'exo_player_${widget.id}'),
-                                                  videoId: widget.id,
-                                                  watchInfo:
-                                                      state.newPipeWatchResp,
-                                                  playbackPosition: savedState
-                                                              .videoInfo?.id ==
-                                                          widget.id
-                                                      ? (savedState.videoInfo
-                                                              ?.playbackPosition ??
-                                                          0)
-                                                      : 0,
-                                                  defaultQuality: settingsState
-                                                      .defaultQuality,
-                                                  videoFitMode: settingsState
-                                                      .videoFitMode,
-                                                  skipInterval: settingsState
-                                                      .skipInterval,
-                                                  sponsorSegments: settingsState
-                                                          .isSponsorBlockEnabled
-                                                      ? state.sponsorSegments
-                                                      : const [],
-                                                  preferAdaptivePlayback:
-                                                      settingsState.isHlsPlayer,
-                                                  isAutoPipEnabled:
-                                                      settingsState
-                                                          .isAutoPipEnabled,
-                                                )
-                                              : NewPipeMediaKitPlayer(
-                                                  // Replaced only when the video id changes, so a
-                                                  // resize keeps this player's state.
-                                                  key: _playerKey,
-                                                  videoId: widget.id,
-                                                  watchInfo:
-                                                      state.newPipeWatchResp,
-                                                  // Only use playback position if it's for the current video
-                                                  // This prevents using the previous video's position when switching videos
-                                                  playbackPosition: savedState
-                                                              .videoInfo?.id ==
-                                                          widget.id
-                                                      ? (savedState.videoInfo
-                                                              ?.playbackPosition ??
-                                                          0)
-                                                      : 0,
-                                                  defaultQuality: settingsState
-                                                      .defaultQuality,
-                                                  videoFitMode: settingsState
-                                                      .videoFitMode,
-                                                  skipInterval: settingsState
-                                                      .skipInterval,
-                                                  subtitleSize: settingsState
-                                                      .subtitleSize,
-                                                  sponsorSegments: settingsState
-                                                          .isSponsorBlockEnabled
-                                                      ? state.sponsorSegments
-                                                      : const [],
-                                                  isAutoPipEnabled:
-                                                      settingsState
-                                                          .isAutoPipEnabled,
-                                                  preferAdaptivePlayback:
-                                                      settingsState.isHlsPlayer,
-                                                )
-                                          : Container(
-                                              height: 200,
-                                              color: kBlackColor,
-                                              child: Center(
-                                                child: cIndicator(context),
-                                              ),
-                                            );
-                                    },
-                                  );
+        // Show player if either condition is true
+        return (shouldShowPlayer || canShowPlayer)
+            ? useNativePlayer
+                ? NewPipeExoPlayer(
+                    key: ValueKey('exo_player_${widget.id}'),
+                    videoId: widget.id,
+                    watchInfo: state.newPipeWatchResp,
+                    playbackPosition: savedState.videoInfo?.id == widget.id
+                        ? (savedState.videoInfo?.playbackPosition ?? 0)
+                        : 0,
+                    defaultQuality: settingsState.defaultQuality,
+                    videoFitMode: settingsState.videoFitMode,
+                    skipInterval: settingsState.skipInterval,
+                    sponsorSegments: settingsState.isSponsorBlockEnabled
+                        ? state.sponsorSegments
+                        : const [],
+                    preferAdaptivePlayback: settingsState.isHlsPlayer,
+                    isAutoPipEnabled: settingsState.isAutoPipEnabled,
+                  )
+                : NewPipeMediaKitPlayer(
+                    // Replaced only when the video id changes, so a
+                    // resize keeps this player's state.
+                    key: _playerKey,
+                    videoId: widget.id,
+                    watchInfo: state.newPipeWatchResp,
+                    // Only use playback position if it's for the current video
+                    // This prevents using the previous video's position when switching videos
+                    playbackPosition: savedState.videoInfo?.id == widget.id
+                        ? (savedState.videoInfo?.playbackPosition ?? 0)
+                        : 0,
+                    defaultQuality: settingsState.defaultQuality,
+                    videoFitMode: settingsState.videoFitMode,
+                    skipInterval: settingsState.skipInterval,
+                    subtitleSize: settingsState.subtitleSize,
+                    sponsorSegments: settingsState.isSponsorBlockEnabled
+                        ? state.sponsorSegments
+                        : const [],
+                    isAutoPipEnabled: settingsState.isAutoPipEnabled,
+                    preferAdaptivePlayback: settingsState.isHlsPlayer,
+                  )
+            : Container(
+                height: 200,
+                color: kBlackColor,
+                child: Center(
+                  child: cIndicator(context),
+                ),
+              );
+      },
+    );
   }
 
   Widget _buildDetails({
@@ -535,105 +501,82 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     final loading = state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
         state.fetchNewPipeWatchInfoStatus == ApiStatus.loading;
     return Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 12, left: 20, right: 20),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        (state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.initial ||
-                                                state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.loading)
-                                            ? CaptionRowWidget(
-                                                caption: state
-                                                        .selectedVideoBasicDetails
-                                                        ?.title ??
-                                                    locals.noVideoTitle,
-                                                icon: state.isDescriptionTapped
-                                                    ? CupertinoIcons.chevron_up
-                                                    : CupertinoIcons
-                                                        .chevron_down,
-                                              )
-                                            : GestureDetector(
-                                                onTap: () =>
-                                                    BlocProvider.of<WatchBloc>(
-                                                            context)
-                                                        .add(WatchEvent
-                                                            .tapDescription()),
-                                                child: CaptionRowWidget(
-                                                  caption: watchInfo.title ??
-                                                      locals.noVideoTitle,
-                                                  icon:
-                                                      state.isDescriptionTapped
-                                                          ? CupertinoIcons
-                                                              .chevron_up
-                                                          : CupertinoIcons
-                                                              .chevron_down,
-                                                ),
-                                              ),
-                                        kHeightBox5,
-                                        (state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.initial ||
-                                                state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.loading)
-                                            ? const SizedBox()
-                                            : ViewRowWidget(
-                                                views: watchInfo.viewCount,
-                                                uploadedDate: watchInfo
-                                                        .textualUploadDate ??
-                                                    '',
-                                              ),
-                                        kHeightBox10,
-                                        (state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.initial ||
-                                                state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.loading)
-                                            ? const ShimmerLikeWidget()
-                                            : NewPipeLikeSection(
-                                                id: widget.id,
-                                                state: state,
-                                                watchInfo: watchInfo,
-                                                pipClicked: () {
-                                                  _enterAppPipAndPop();
-                                                },
-                                              ),
-                                        kHeightBox10,
-                                        const Divider(),
-                                        (state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.initial ||
-                                                state.fetchNewPipeWatchInfoStatus ==
-                                                    ApiStatus.loading)
-                                            ? const ShimmerSubscribeWidget()
-                                            : NewPipeChannelInfoSection(
-                                                state: state,
-                                                watchInfo: watchInfo,
-                                                locals: locals,
-                                                keepVisible: wide),
-                                        if (wide || !state.isTapComments)
-                                          const Divider(),
-                                        kHeightBox10,
-                                        if (wide)
-                                          state.isDescriptionTapped
-                                              ? NewPipeDescriptionSection(
-                                                  height: height,
-                                                  watchInfo: watchInfo,
-                                                  locals: locals,
-                                                  limitHeight: false,
-                                                )
-                                              : const SizedBox()
-                                        else
-                                          _buildNarrowStream(
-                                            state: state,
-                                            settingsState: settingsState,
-                                            locals: locals,
-                                            height: height,
-                                            watchInfo: watchInfo,
-                                            loading: loading,
-                                          ),
-                                      ],
-                                    ),
-                                  );
+      padding: const EdgeInsets.only(top: 12, left: 20, right: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          (state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+                  state.fetchNewPipeWatchInfoStatus == ApiStatus.loading)
+              ? CaptionRowWidget(
+                  caption: state.selectedVideoBasicDetails?.title ??
+                      locals.noVideoTitle,
+                  icon: state.isDescriptionTapped
+                      ? CupertinoIcons.chevron_up
+                      : CupertinoIcons.chevron_down,
+                )
+              : GestureDetector(
+                  onTap: () => BlocProvider.of<WatchBloc>(context)
+                      .add(WatchEvent.tapDescription()),
+                  child: CaptionRowWidget(
+                    caption: watchInfo.title ?? locals.noVideoTitle,
+                    icon: state.isDescriptionTapped
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                  ),
+                ),
+          kHeightBox5,
+          (state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+                  state.fetchNewPipeWatchInfoStatus == ApiStatus.loading)
+              ? const SizedBox()
+              : ViewRowWidget(
+                  views: watchInfo.viewCount,
+                  uploadedDate: watchInfo.textualUploadDate ?? '',
+                ),
+          kHeightBox10,
+          (state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+                  state.fetchNewPipeWatchInfoStatus == ApiStatus.loading)
+              ? const ShimmerLikeWidget()
+              : NewPipeLikeSection(
+                  id: widget.id,
+                  state: state,
+                  watchInfo: watchInfo,
+                  pipClicked: () {
+                    _enterAppPipAndPop();
+                  },
+                ),
+          kHeightBox10,
+          const Divider(),
+          (state.fetchNewPipeWatchInfoStatus == ApiStatus.initial ||
+                  state.fetchNewPipeWatchInfoStatus == ApiStatus.loading)
+              ? const ShimmerSubscribeWidget()
+              : NewPipeChannelInfoSection(
+                  state: state,
+                  watchInfo: watchInfo,
+                  locals: locals,
+                  keepVisible: wide),
+          if (wide || !state.isTapComments) const Divider(),
+          kHeightBox10,
+          if (wide)
+            state.isDescriptionTapped
+                ? NewPipeDescriptionSection(
+                    height: height,
+                    watchInfo: watchInfo,
+                    locals: locals,
+                    limitHeight: false,
+                  )
+                : const SizedBox()
+          else
+            _buildNarrowStream(
+              state: state,
+              settingsState: settingsState,
+              locals: locals,
+              height: height,
+              watchInfo: watchInfo,
+              loading: loading,
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildNarrowStream({

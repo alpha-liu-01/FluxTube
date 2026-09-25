@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/window_layout.dart';
+import 'package:fluxtube/widgets/card_row.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ShimmerHomeVideoInfoCard extends StatelessWidget {
@@ -250,27 +251,27 @@ class ShimmerLikeWidget extends StatelessWidget {
   }
 }
 
-/// One row of compact shimmer cards. [columns] includes empty cells.
+/// One row of compact shimmer cards. [filled] is how many cells have a card.
+/// The rest of [columns] stay empty.
 class ShimmerHomeVideoRow extends StatelessWidget {
-  const ShimmerHomeVideoRow({super.key, required this.columns});
+  const ShimmerHomeVideoRow({
+    super.key,
+    required this.columns,
+    this.filled,
+  });
 
   final int columns;
+  final int? filled;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var column = 0; column < columns; column++) ...[
-            if (column > 0) const SizedBox(width: 12),
-            const Expanded(
-              child: ShimmerHomeVideoInfoCard(aspectRatioThumbnail: true),
-            ),
-          ],
-        ],
-      ),
+    final count = (filled ?? columns).clamp(0, columns);
+    return CardRow(
+      columns: columns,
+      children: [
+        for (var column = 0; column < count; column++)
+          const ShimmerHomeVideoInfoCard(aspectRatioThumbnail: true),
+      ],
     );
   }
 }
@@ -301,24 +302,7 @@ class ShimmerHomeVideoGrid extends StatelessWidget {
           itemBuilder: (context, row) {
             final start = row * columns;
             final filled = (itemCount - start).clamp(0, columns);
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var column = 0; column < columns; column++) ...[
-                    if (column > 0) const SizedBox(width: 12),
-                    Expanded(
-                      child: column < filled
-                          ? const ShimmerHomeVideoInfoCard(
-                              aspectRatioThumbnail: true,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ],
-              ),
-            );
+            return ShimmerHomeVideoRow(columns: columns, filled: filled);
           },
         );
       },

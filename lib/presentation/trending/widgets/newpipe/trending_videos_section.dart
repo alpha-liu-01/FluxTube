@@ -9,6 +9,7 @@ import 'package:fluxtube/domain/trending/models/newpipe/newpipe_trending_resp.da
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/trending/widgets/newpipe/home_video_info_card_widget.dart';
+import 'package:fluxtube/widgets/card_row.dart';
 import 'package:go_router/go_router.dart';
 
 class NewPipeTrendingVideosSection extends StatefulWidget {
@@ -136,31 +137,23 @@ class _NewPipeTrendingVideosSectionState
       row.clear();
       slivers.add(
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var column = 0; column < columns; column++) ...[
-                  if (column > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: column < indexes.length
-                        ? _buildVideoCard(
-                            widget.state.newPipeTrendingResult[indexes[column]],
-                            subscribeState,
-                            aspectRatioThumbnail: true,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ],
-            ),
+          child: CardRow(
+            columns: columns,
+            children: [
+              for (final index in indexes)
+                _buildVideoCard(
+                  widget.state.newPipeTrendingResult[index],
+                  subscribeState,
+                  aspectRatioThumbnail: true,
+                ),
+            ],
           ),
         ),
       );
     }
 
     for (var index = 0; index < itemCount; index++) {
+      if (!_canShowVideo(widget.state.newPipeTrendingResult[index])) continue;
       row.add(index);
       if (row.length == columns) flushRow();
     }
@@ -179,6 +172,13 @@ class _NewPipeTrendingVideosSectionState
       scrollCacheExtent: const ScrollCacheExtent.pixels(500),
       slivers: slivers,
     );
+  }
+
+  bool _canShowVideo(NewPipeTrendingResp trending) {
+    final videoId = trending.videoId;
+    if (videoId == null || videoId.isEmpty) return false;
+    final channelId = trending.uploaderUrl?.split('/').last ?? '';
+    return channelId.isNotEmpty;
   }
 
   Widget _buildVideoCard(

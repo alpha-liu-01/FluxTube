@@ -170,25 +170,16 @@ class _NewPipeSearchResultSectionState
       row.clear();
       slivers.add(
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var column = 0; column < columns; column++) ...[
-                  if (column > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: column < items.length
-                        ? _buildRegularItem(
-                            items[column],
-                            subscribeState,
-                            aspectRatioThumbnail: true,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ],
-            ),
+          child: CardRow(
+            columns: columns,
+            children: [
+              for (final item in items)
+                _buildRegularItem(
+                  item,
+                  subscribeState,
+                  aspectRatioThumbnail: true,
+                ),
+            ],
           ),
         ),
       );
@@ -196,6 +187,7 @@ class _NewPipeSearchResultSectionState
 
     for (final result in regularItems) {
       if (result.type == 'STREAM') {
+        if (!_canShowStream(result)) continue;
         row.add(result);
         if (row.length == columns) flushRow();
       } else {
@@ -213,6 +205,13 @@ class _NewPipeSearchResultSectionState
       slivers.add(SliverToBoxAdapter(child: cIndicator(context)));
     }
     return slivers;
+  }
+
+  bool _canShowStream(NewPipeSearchItem result) {
+    final videoId =
+        result.videoId ?? result.url?.split('v=').last.split('&').first ?? '';
+    final channelId = result.uploaderUrl?.split('/').last ?? '';
+    return videoId.isNotEmpty && channelId.isNotEmpty;
   }
 
   Widget _buildRegularItem(
@@ -293,8 +292,8 @@ class _NewPipeSearchResultSectionState
           aspectRatioThumbnail: aspectRatioThumbnail,
           onSubscribeTap: () {
             if (isSubscribed) {
-              BlocProvider.of<SubscribeBloc>(context).add(
-                  SubscribeEvent.deleteSubscribeInfo(id: channelId));
+              BlocProvider.of<SubscribeBloc>(context)
+                  .add(SubscribeEvent.deleteSubscribeInfo(id: channelId));
             } else {
               BlocProvider.of<SubscribeBloc>(context).add(
                 SubscribeEvent.addSubscribe(

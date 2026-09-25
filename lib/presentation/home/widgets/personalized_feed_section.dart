@@ -12,6 +12,7 @@ import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
 import 'package:fluxtube/presentation/search/widgets/newpipe/home_video_info_card_widget.dart';
 import 'package:fluxtube/presentation/shorts/screen_shorts.dart';
+import 'package:fluxtube/widgets/card_row.dart';
 import 'package:fluxtube/widgets/shimmers/shimmer_home_video_card.dart';
 import 'package:go_router/go_router.dart';
 
@@ -168,30 +169,22 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
       row.clear();
       slivers.add(
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var column = 0; column < columns; column++) ...[
-                  if (column > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: column < indexes.length
-                        ? _buildVideoCard(
-                            videos[indexes[column]],
-                            aspectRatioThumbnail: true,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ],
-            ),
+          child: CardRow(
+            columns: columns,
+            children: [
+              for (final index in indexes)
+                _buildVideoCard(
+                  videos[index],
+                  aspectRatioThumbnail: true,
+                ),
+            ],
           ),
         ),
       );
     }
 
     for (var index = 0; index < videos.length; index++) {
+      if (!_canShowVideo(videos[index])) continue;
       row.add(index);
       if (row.length == columns) flushRow();
       final shortsToShow = _shortsAfter(index, shorts);
@@ -251,6 +244,13 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
     final slice = shorts.sublist(start, end);
     if (slice.isEmpty) return null;
     return slice;
+  }
+
+  bool _canShowVideo(NewPipeSearchItem video) {
+    final videoId =
+        video.videoId ?? video.url?.split('v=').last.split('&').first ?? '';
+    final channelId = video.uploaderUrl?.split('/').last ?? '';
+    return videoId.isNotEmpty && channelId.isNotEmpty;
   }
 
   Widget _buildVideoCard(

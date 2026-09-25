@@ -423,10 +423,16 @@ class _ShellRail extends StatelessWidget {
       destinations: [
         for (final item in items)
           NavigationRailDestination(
-            icon: Icon(item.icon as IconData),
+            icon: _railIcon(item.icon),
             label: Text(item.title ?? ''),
           ),
       ],
     );
   }
+}
+
+Widget _railIcon(Object? icon) {
+  if (icon is Widget) return icon;
+  if (icon is IconData) return Icon(icon);
+  return const SizedBox.shrink();
 }

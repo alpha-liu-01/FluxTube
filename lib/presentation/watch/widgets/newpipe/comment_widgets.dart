@@ -75,6 +75,19 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final comments = BlocBuilder<WatchBloc, WatchState>(
+      buildWhen: (previous, current) =>
+          previous.fetchNewPipeCommentsStatus !=
+              current.fetchNewPipeCommentsStatus ||
+          previous.fetchMoreNewPipeCommentsStatus !=
+              current.fetchMoreNewPipeCommentsStatus ||
+          previous.newPipeComments != current.newPipeComments ||
+          previous.isMoreNewPipeCommentsFetchCompleted !=
+              current.isMoreNewPipeCommentsFetchCompleted,
+      builder: (context, state) {
+        return _buildCommentsList(theme, isDark, state);
+      },
+    );
 
     return Container(
       constraints: widget.fillColumn
@@ -102,40 +115,12 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Column(
-          mainAxisSize:
-              widget.fillColumn ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: widget.fillColumn ? MainAxisSize.max : MainAxisSize.min,
           children: [
-            // Header
             _buildHeader(theme, isDark),
-            // Comments list
             widget.fillColumn
-                ? Expanded(
-                    child: BlocBuilder<WatchBloc, WatchState>(
-                      buildWhen: (previous, current) =>
-                          previous.fetchNewPipeCommentsStatus !=
-                              current.fetchNewPipeCommentsStatus ||
-                          previous.fetchMoreNewPipeCommentsStatus !=
-                              current.fetchMoreNewPipeCommentsStatus ||
-                          previous.newPipeComments != current.newPipeComments ||
-                          previous.isMoreNewPipeCommentsFetchCompleted !=
-                              current.isMoreNewPipeCommentsFetchCompleted,
-                      builder: (context, state) {
-                        return _buildCommentsList(theme, isDark, state);
-                      },
-                    ),
-                  )
-                : Flexible(
-              child: BlocBuilder<WatchBloc, WatchState>(
-                buildWhen: (previous, current) =>
-                    previous.fetchNewPipeCommentsStatus != current.fetchNewPipeCommentsStatus ||
-                    previous.fetchMoreNewPipeCommentsStatus != current.fetchMoreNewPipeCommentsStatus ||
-                    previous.newPipeComments != current.newPipeComments ||
-                    previous.isMoreNewPipeCommentsFetchCompleted != current.isMoreNewPipeCommentsFetchCompleted,
-                builder: (context, state) {
-                  return _buildCommentsList(theme, isDark, state);
-                },
-              ),
-            ),
+                ? Expanded(child: comments)
+                : Flexible(child: comments),
           ],
         ),
       ),
@@ -344,7 +329,8 @@ class _NewPipeCommentSectionState extends State<NewPipeCommentSection> {
               icon: const Icon(CupertinoIcons.refresh, size: 16),
               label: Text(widget.locals.retry),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -660,7 +646,8 @@ class _ModernCommentCard extends StatelessWidget {
                                 color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3),
                                   width: 0.5,
                                 ),
                               ),
@@ -841,7 +828,9 @@ class _CommentTextWidgetState extends State<_CommentTextWidget> {
             child: Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(
-                _isExpanded ? widget.locals.showLessText : widget.locals.readMoreText,
+                _isExpanded
+                    ? widget.locals.showLessText
+                    : widget.locals.readMoreText,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1127,14 +1116,18 @@ class _ModernRepliesSheetState extends State<_ModernRepliesSheet> {
                         current.fetchNewPipeCommentRepliesStatus ||
                     previous.fetchMoreNewPipeCommentRepliesStatus !=
                         current.fetchMoreNewPipeCommentRepliesStatus ||
-                    previous.newPipeCommentReplies != current.newPipeCommentReplies,
+                    previous.newPipeCommentReplies !=
+                        current.newPipeCommentReplies,
                 builder: (context, state) {
-                  if (state.fetchNewPipeCommentRepliesStatus == ApiStatus.loading ||
-                      state.fetchNewPipeCommentRepliesStatus == ApiStatus.initial) {
+                  if (state.fetchNewPipeCommentRepliesStatus ==
+                          ApiStatus.loading ||
+                      state.fetchNewPipeCommentRepliesStatus ==
+                          ApiStatus.initial) {
                     return const _ModernCommentShimmer();
                   }
 
-                  if (state.fetchNewPipeCommentRepliesStatus == ApiStatus.error) {
+                  if (state.fetchNewPipeCommentRepliesStatus ==
+                      ApiStatus.error) {
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1150,7 +1143,8 @@ class _ModernRepliesSheetState extends State<_ModernRepliesSheet> {
                               context.read<WatchBloc>().add(
                                     WatchEvent.getNewPipeCommentReplies(
                                       videoId: widget.videoId,
-                                      repliesPage: widget.parentComment.repliesPage!,
+                                      repliesPage:
+                                          widget.parentComment.repliesPage!,
                                     ),
                                   );
                             },
@@ -1163,7 +1157,8 @@ class _ModernRepliesSheetState extends State<_ModernRepliesSheet> {
 
                   final replies = state.newPipeCommentReplies.comments ?? [];
                   final isLoadingMore =
-                      state.fetchMoreNewPipeCommentRepliesStatus == ApiStatus.loading;
+                      state.fetchMoreNewPipeCommentRepliesStatus ==
+                          ApiStatus.loading;
 
                   return ListView.builder(
                     controller: _scrollController,
@@ -1179,7 +1174,8 @@ class _ModernRepliesSheetState extends State<_ModernRepliesSheet> {
                           videoId: widget.videoId,
                           isReply: true,
                           onProfileTap: () {
-                            final channelId = _extractChannelId(reply.authorUrl);
+                            final channelId =
+                                _extractChannelId(reply.authorUrl);
                             if (channelId != null) {
                               // Enable PIP before navigating to channel
                               BlocProvider.of<WatchBloc>(context)
@@ -1328,9 +1324,8 @@ class _ShimmerCardState extends State<_ShimmerCard>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark
-        ? AppColors.surfaceVariantDark
-        : AppColors.surfaceVariant;
+    final baseColor =
+        widget.isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant;
     final highlightColor = widget.isDark
         ? AppColors.surfaceVariantDark.withValues(alpha: 0.7)
         : Colors.white.withValues(alpha: 0.5);

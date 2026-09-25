@@ -237,7 +237,7 @@ class ScreenHome extends StatelessWidget {
 
     if (trendingState.fetchPersonalizedFeedStatus == ApiStatus.loading ||
         trendingState.fetchPersonalizedFeedStatus == ApiStatus.initial) {
-      return _buildLoadingList();
+      return const ShimmerHomeVideoGrid();
     }
 
     // If personalized feed fails or is empty, fall back to trending

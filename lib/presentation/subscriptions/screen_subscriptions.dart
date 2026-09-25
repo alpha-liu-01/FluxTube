@@ -7,6 +7,7 @@ import 'package:fluxtube/core/animations/animations.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/core/operations/math_operations.dart';
 import 'package:fluxtube/domain/subscribes/models/subscribe.dart';
 import 'package:fluxtube/domain/trending/models/newpipe/newpipe_trending_resp.dart';
@@ -510,8 +511,7 @@ class _ScreenSubscriptionsState extends State<ScreenSubscriptions>
             }
 
             if (isLoading) {
-              return ListView.builder(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+              return _buildResponsiveCards(
                 itemCount: 6,
                 itemBuilder: (context, index) => const Padding(
                   padding: EdgeInsets.only(bottom: AppSpacing.md),
@@ -544,8 +544,7 @@ class _ScreenSubscriptionsState extends State<ScreenSubscriptions>
                   );
                 }
               },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+              child: _buildResponsiveCards(
                 itemCount: feedLength,
                 itemBuilder: (context, index) {
                   if (isNewPipe) {
@@ -587,6 +586,48 @@ class _ScreenSubscriptionsState extends State<ScreenSubscriptions>
                   }
                 },
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildResponsiveCards({
+    required int itemCount,
+    required Widget Function(BuildContext context, int index) itemBuilder,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth.isFinite
+            ? WindowLayout.cardColumns(constraints.maxWidth)
+            : 1;
+        if (columns == 1) {
+          return ListView.builder(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            itemCount: itemCount,
+            itemBuilder: itemBuilder,
+          );
+        }
+        final rowCount = (itemCount / columns).ceil();
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          itemCount: rowCount,
+          itemBuilder: (context, row) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var column = 0; column < columns; column++) ...[
+                  if (column > 0) const SizedBox(width: 12),
+                  Expanded(
+                    child: () {
+                      final index = row * columns + column;
+                      if (index >= itemCount) return const SizedBox.shrink();
+                      return itemBuilder(context, index);
+                    }(),
+                  ),
+                ],
+              ],
             );
           },
         );

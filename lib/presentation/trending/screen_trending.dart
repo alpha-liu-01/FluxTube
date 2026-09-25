@@ -93,13 +93,7 @@ class ScreenTrending extends StatelessWidget {
       TrendingState state, S locals, context, SettingsState settingsState) {
     if (state.fetchNewPipeTrendingStatus == ApiStatus.loading ||
         state.fetchNewPipeTrendingStatus == ApiStatus.initial) {
-      return ListView.separated(
-        separatorBuilder: (context, index) => kHeightBox10,
-        itemBuilder: (context, index) {
-          return const ShimmerHomeVideoInfoCard();
-        },
-        itemCount: 10,
-      );
+      return const ShimmerHomeVideoGrid();
     } else if (state.fetchNewPipeTrendingStatus == ApiStatus.error ||
         state.newPipeTrendingResult.isEmpty) {
       if (state.newPipeTrendingResult.isEmpty) {

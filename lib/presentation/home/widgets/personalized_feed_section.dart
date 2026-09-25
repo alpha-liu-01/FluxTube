@@ -69,12 +69,7 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
   Widget build(BuildContext context) {
     // Show shimmer while loading
     if (widget.trendingState.fetchPersonalizedFeedStatus == ApiStatus.loading) {
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: 3,
-        itemBuilder: (context, index) => const ShimmerHomeVideoInfoCard(),
-      );
+      return const ShimmerHomeVideoGrid(itemCount: 3);
     }
 
     final items =
@@ -96,12 +91,7 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
 
     // Show shimmer if still in initial state
     if (items.isEmpty) {
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: 3,
-        itemBuilder: (context, index) => const ShimmerHomeVideoInfoCard(),
-      );
+      return const ShimmerHomeVideoGrid(itemCount: 3);
     }
 
     // Separate shorts and videos for mixed layout
@@ -227,13 +217,8 @@ class _PersonalizedFeedSectionState extends State<PersonalizedFeedSection> {
 
     if (widget.trendingState.isLoadingMorePersonalizedFeed) {
       slivers.add(
-        const SliverToBoxAdapter(
-          child: Column(
-            children: [
-              ShimmerHomeVideoInfoCard(),
-              ShimmerHomeVideoInfoCard(),
-            ],
-          ),
+        SliverToBoxAdapter(
+          child: ShimmerHomeVideoRow(columns: columns),
         ),
       );
     }

@@ -12,9 +12,17 @@ dest="$(cd "$1" && pwd)"
 release="autobuild-2026-09-22-13-18"
 base="https://github.com/BtbN/FFmpeg-Builds/releases/download/${release}"
 
-# shellcheck disable=SC1091
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/host-arch.sh"
-host_cpu="$(host_machine)"
+# The Windows runner's shell is x64 even when the app is ARM64, so the
+# output directory decides the binary. host_machine is only the fallback.
+case "${dest}" in
+  */windows/arm64 | */windows/arm64/*) host_cpu=aarch64 ;;
+  */windows/x64 | */windows/x64/*) host_cpu=x86_64 ;;
+  *)
+    # shellcheck disable=SC1091
+    . "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/host-arch.sh"
+    host_cpu="$(host_machine)"
+    ;;
+esac
 case "${host_cpu}" in
   x86_64 | amd64) ffmpeg_arch=linux64 ;;
   aarch64 | arm64) ffmpeg_arch=linuxarm64 ;;
@@ -23,6 +31,7 @@ case "${host_cpu}" in
     exit 1
     ;;
 esac
+echo "Packaging ffmpeg into ${dest} as ${host_cpu}"
 
 case "$(uname -s)" in
   Linux)

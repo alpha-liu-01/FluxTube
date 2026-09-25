@@ -98,16 +98,25 @@ case "$(uname -s)" in
     ;;
 esac
 
-# shellcheck disable=SC1091
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/host-arch.sh"
-case "$(host_machine)" in
-  x86_64 | amd64) arch=x64 ;;
-  aarch64 | arm64) arch=aarch64 ;;
+# The Windows runner's shell is x64 even when the app is ARM64, so the
+# output directory decides the runtime. host_machine is only the fallback.
+case "${dest}" in
+  */windows/arm64 | */windows/arm64/*) arch=aarch64 ;;
+  */windows/x64 | */windows/x64/*) arch=x64 ;;
   *)
-    echo "Unsupported CPU $(host_machine). This script bundles the x64 and aarch64 runtimes." >&2
-    exit 1
+    # shellcheck disable=SC1091
+    . "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/host-arch.sh"
+    case "$(host_machine)" in
+      x86_64 | amd64) arch=x64 ;;
+      aarch64 | arm64) arch=aarch64 ;;
+      *)
+        echo "Unsupported CPU $(host_machine). This script bundles the x64 and aarch64 runtimes." >&2
+        exit 1
+        ;;
+    esac
     ;;
 esac
+echo "Packaging Java runtime into ${dest} as ${arch}"
 
 # Temurin has no Windows ARM64 JDK 17. Microsoft Build of OpenJDK 17 does,
 # and it is also GPL-2.0 with the Classpath Exception.

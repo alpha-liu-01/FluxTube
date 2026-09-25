@@ -7,6 +7,7 @@ import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/deep_link_handler.dart';
 import 'package:fluxtube/core/enums.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
 import 'package:fluxtube/core/services/pip_service.dart';
 import 'package:fluxtube/generated/l10n.dart';
@@ -69,6 +70,7 @@ class MainNavigationState extends State<MainNavigation> {
   final DeepLinkHandler _deepLinkHandler = DeepLinkHandler();
   bool? _previousShowTrending;
   final Map<String, Widget> _pageCache = {};
+  final GlobalKey _stackKey = GlobalKey();
 
   List<Widget> _getPages(bool showTrending) {
     if (showTrending) {
@@ -266,6 +268,14 @@ class MainNavigationState extends State<MainNavigation> {
                   indexChangeNotifier.value = safeIndex;
                 });
               }
+              final useRail = WindowLayout.useSideRail(
+                MediaQuery.sizeOf(context).width,
+              );
+              final stack = _LazyIndexedStack(
+                key: _stackKey,
+                index: safeIndex,
+                children: pages,
+              );
               return PopScope(
                 canPop: false,
                 onPopInvokedWithResult: (didPop, _) async {
@@ -291,33 +301,43 @@ class MainNavigationState extends State<MainNavigation> {
                 },
                 child: Scaffold(
                   body: SafeArea(
-                    child: _LazyIndexedStack(
-                      index: safeIndex,
-                      children: pages,
-                    ),
+                    child: useRail
+                        ? Row(
+                            children: [
+                              _ShellRail(
+                                items: items,
+                                selectedIndex: safeIndex,
+                              ),
+                              Expanded(child: stack),
+                            ],
+                          )
+                        : stack,
                   ),
-                  bottomNavigationBar: BottomBarSalomon(
-                    items: items,
-                    top: 25,
-                    bottom: 25,
-                    iconSize: 26,
-                    heightItem: 50,
-                    backgroundColor: kTransparentColor,
-                    color: kGreyColor!,
-                    colorSelected: kRedColor,
-                    backgroundSelected: kGreyOpacityColor!,
-                    indexSelected: safeIndex,
-                    titleStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    onTap: (int index) => indexChangeNotifier.value = index,
-                  ),
+                  bottomNavigationBar: useRail
+                      ? null
+                      : BottomBarSalomon(
+                          items: items,
+                          top: 25,
+                          bottom: 25,
+                          iconSize: 26,
+                          heightItem: 50,
+                          backgroundColor: kTransparentColor,
+                          color: kGreyColor!,
+                          colorSelected: kRedColor,
+                          backgroundSelected: kGreyOpacityColor!,
+                          indexSelected: safeIndex,
+                          titleStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                          onTap: (int index) =>
+                              indexChangeNotifier.value = index,
+                        ),
                 ),
               );
             },
@@ -330,6 +350,7 @@ class MainNavigationState extends State<MainNavigation> {
 
 class _LazyIndexedStack extends StatefulWidget {
   const _LazyIndexedStack({
+    super.key,
     required this.index,
     required this.children,
   });
@@ -372,6 +393,39 @@ class _LazyIndexedStackState extends State<_LazyIndexedStack> {
       children: [
         for (var i = 0; i < widget.children.length; i++)
           _built[i] ? widget.children[i] : const SizedBox.shrink(),
+      ],
+    );
+  }
+}
+
+class _ShellRail extends StatelessWidget {
+  const _ShellRail({
+    required this.items,
+    required this.selectedIndex,
+  });
+
+  final List<TabItem> items;
+  final int selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationRail(
+      extended: false,
+      labelType: NavigationRailLabelType.selected,
+      minWidth: 72,
+      groupAlignment: -1,
+      backgroundColor: kTransparentColor,
+      selectedIndex: selectedIndex,
+      selectedIconTheme: const IconThemeData(color: kRedColor),
+      unselectedIconTheme: IconThemeData(color: kGreyColor),
+      indicatorColor: kGreyOpacityColor,
+      onDestinationSelected: (index) => indexChangeNotifier.value = index,
+      destinations: [
+        for (final item in items)
+          NavigationRailDestination(
+            icon: Icon(item.icon as IconData),
+            label: Text(item.title ?? ''),
+          ),
       ],
     );
   }

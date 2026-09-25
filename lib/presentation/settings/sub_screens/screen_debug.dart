@@ -111,8 +111,10 @@ class _ScreenDebugState extends State<ScreenDebug> {
         children: [
           _infoChip(locals.logsLabel, '${_collector.entries.length}'),
           const SizedBox(width: 8),
-          _infoChip(locals.imageCacheLabel,
-              '${PaintingBinding.instance.imageCache.currentSize}'),
+          _infoChip(
+            locals.imageCacheLabel,
+            '${PaintingBinding.instance.imageCache.currentSize} / ${(PaintingBinding.instance.imageCache.currentSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MiB',
+          ),
           const SizedBox(width: 8),
           _infoChip(locals.platformLabel, Platform.operatingSystem),
         ],

@@ -1,9 +1,11 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:fluxtube/core/player/memory_sample.dart';
 import 'package:fluxtube/core/services/pip_service.dart';
 import 'package:fluxtube/core/services/audio_handler_service.dart';
 import 'package:fluxtube/core/services/exoplayer_notification_bridge.dart';
@@ -249,6 +251,7 @@ class GlobalPlayerController extends ChangeNotifier {
     }
     notifyListeners();
     log('[GlobalPlayer] Set current video ID: $videoId');
+    sampleMemory('video $videoId');
   }
 
   /// Check if we're already playing (or have paused) the requested video
@@ -466,6 +469,29 @@ class GlobalPlayerController extends ChangeNotifier {
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           };
 
+      if (Platform.environment['FLUXTUBE_MEM_VID_NO'] == '1') {
+        try {
+          await (_player!.platform as dynamic).setProperty('vid', 'no');
+        } catch (e) {
+          log('[GlobalPlayer] Could not disable video decode: $e');
+        }
+      }
+      if (Platform.environment['FLUXTUBE_MEM_AID_NO'] == '1') {
+        try {
+          await (_player!.platform as dynamic).setProperty('aid', 'no');
+        } catch (e) {
+          log('[GlobalPlayer] Could not disable audio decode: $e');
+        }
+      }
+      if (Platform.environment['FLUXTUBE_MEM_DEMUX_CAP'] == '1') {
+        try {
+          await (_player!.platform as dynamic)
+              .setProperty('demuxer-max-bytes', '1048576');
+        } catch (e) {
+          log('[GlobalPlayer] Could not cap demuxer: $e');
+        }
+      }
+
       // Open the video
       await _player!.open(
         Media(videoUrl, httpHeaders: headers),
@@ -489,8 +515,10 @@ class GlobalPlayerController extends ChangeNotifier {
         log('[GlobalPlayer] Seeked to $seekToSeconds s');
       }
 
-      // Start playback
-      await _player!.play();
+      // Start playback unless this process is measuring open() alone.
+      if (Platform.environment['FLUXTUBE_MEM_NO_PLAY'] != '1') {
+        await _player!.play();
+      }
 
       // Update state
       _currentVideoId = videoId;
@@ -613,9 +641,11 @@ class GlobalPlayerController extends ChangeNotifier {
       try {
         await _player!.pause();
         await _player!.stop();
-        // Open an empty media to fully reset the player
+        // Open an empty media to fully reset the player. Skipping this open
+        // did not shrink the per-video resident-size climb.
         await _player!.open(Media(''));
         log('[GlobalPlayer] Player stopped and reset');
+        sampleMemory('stop-clear-empty-open');
       } catch (e) {
         log('[GlobalPlayer] Error during stop: $e');
       }

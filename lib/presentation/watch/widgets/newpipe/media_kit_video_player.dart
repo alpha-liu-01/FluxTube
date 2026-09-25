@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -243,6 +244,10 @@ class _NewPipeMediaKitPlayerState extends State<NewPipeMediaKitPlayer> {
   }
 
   Future<void> _initializePlayback() async {
+    if (Platform.environment['FLUXTUBE_MEM_UI_ONLY'] == '1') {
+      debugPrint('[NewPipePlayer] Memory probe skipped playback');
+      return;
+    }
     try {
       // If global player was playing a different video (e.g., in PiP), stop it first
       if (_globalPlayer.hasActivePlayer &&

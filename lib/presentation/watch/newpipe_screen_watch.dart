@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -60,8 +63,21 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     });
   }
 
+  void _evictRelatedThumbnails() {
+    final related =
+        context.read<WatchBloc>().state.newPipeWatchResp.relatedStreams;
+    if (related == null) return;
+    final cache = PaintingBinding.instance.imageCache;
+    for (final stream in related) {
+      final url = stream.thumbnailUrl;
+      if (url == null || url.isEmpty) continue;
+      cache.evict(CachedNetworkImageProvider(url, maxWidth: 320));
+    }
+  }
+
   @override
   void dispose() {
+    _evictRelatedThumbnails();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -88,6 +104,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     super.didUpdateWidget(oldWidget);
     // If the video ID changed (e.g., user clicked a related video), reinitialize
     if (oldWidget.id != widget.id) {
+      _evictRelatedThumbnails();
       debugPrint(
           '[NewPipeScreenWatch] Video ID changed from ${oldWidget.id} to ${widget.id}');
       // Reset player visibility for new video
@@ -162,7 +179,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     }
 
     // Only fetch data if not returning from PiP with data already loaded
-    if (!isReturningFromPip) {
+    if (!isReturningFromPip &&
+        Platform.environment['FLUXTUBE_MEM_SKIP_WATCH_FETCH'] != '1') {
       // Use fast loading with parallel SponsorBlock fetch
       watchBloc.add(WatchEvent.getNewPipeWatchInfoFast(
         id: widget.id,
@@ -355,7 +373,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                       }
 
                                       // Show player if either condition is true
-                                      return (shouldShowPlayer || canShowPlayer)
+                                      return (Platform.environment['FLUXTUBE_MEM_HIDE_PLAYER'] != '1' &&
+                                              (shouldShowPlayer || canShowPlayer))
                                           ? useNativePlayer
                                               ? NewPipeExoPlayer(
                                                   key: ValueKey(
@@ -437,7 +456,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        (state.fetchNewPipeWatchInfoStatus ==
+                                        if (Platform.environment['FLUXTUBE_MEM_HIDE_TITLE'] != '1')
+                                          (state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.initial ||
                                                 state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.loading)
@@ -469,7 +489,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                                 ),
                                               ),
                                         kHeightBox5,
-                                        (state.fetchNewPipeWatchInfoStatus ==
+                                        if (Platform.environment['FLUXTUBE_MEM_HIDE_VIEWS'] != '1')
+                                          (state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.initial ||
                                                 state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.loading)
@@ -481,7 +502,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                                     '',
                                               ),
                                         kHeightBox10,
-                                        (state.fetchNewPipeWatchInfoStatus ==
+                                        if (Platform.environment['FLUXTUBE_MEM_HIDE_LIKES'] != '1')
+                                          (state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.initial ||
                                                 state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.loading)
@@ -496,7 +518,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                               ),
                                         kHeightBox10,
                                         const Divider(),
-                                        (state.fetchNewPipeWatchInfoStatus ==
+                                        if (Platform.environment['FLUXTUBE_MEM_HIDE_CHANNEL'] != '1')
+                                          (state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.initial ||
                                                 state.fetchNewPipeWatchInfoStatus ==
                                                     ApiStatus.loading)
@@ -514,7 +537,10 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                                 watchInfo: watchInfo,
                                                 locals: locals)
                                             : state.isTapComments == false
-                                                ? settingsState.isHideRelated
+                                                ? (settingsState.isHideRelated ||
+                                                        Platform.environment[
+                                                                'FLUXTUBE_MEM_HIDE_RELATED'] ==
+                                                            '1')
                                                     ? const SizedBox()
                                                     : (state.fetchNewPipeWatchInfoStatus ==
                                                                 ApiStatus

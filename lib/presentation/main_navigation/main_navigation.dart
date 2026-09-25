@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:awesome_bottom_bar/awesome_bottom_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +10,9 @@ import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/deep_link_handler.dart';
 import 'package:fluxtube/core/enums.dart';
 import 'package:fluxtube/core/player/global_player_controller.dart';
+import 'package:fluxtube/core/player/memory_sample.dart';
+import 'package:fluxtube/domain/watch/models/newpipe/newpipe_stream.dart';
+import 'package:fluxtube/infrastructure/newpipe/newpipe_channel.dart';
 import 'package:fluxtube/core/services/pip_service.dart';
 import 'package:fluxtube/generated/l10n.dart';
 
@@ -69,6 +74,7 @@ class MainNavigationState extends State<MainNavigation> {
   final DeepLinkHandler _deepLinkHandler = DeepLinkHandler();
   bool? _previousShowTrending;
   final Map<String, Widget> _pageCache = {};
+  String? _sameStreamUrl;
 
   List<Widget> _getPages(bool showTrending) {
     if (showTrending) {
@@ -150,6 +156,57 @@ class MainNavigationState extends State<MainNavigation> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _deepLinkHandler.init(context);
+      startMemoryProbe(
+        context,
+        readDemuxerCache: () async {
+          final platform = GlobalPlayerController().player.platform as dynamic;
+          try {
+            return await platform.getProperty('demuxer-cache-state');
+          } catch (_) {
+            return await platform.getProperty('cache-used');
+          }
+        },
+        playVideoOnly: (videoId) async {
+          final local = Platform.environment['FLUXTUBE_MEM_LOCAL_FILE'];
+          if (local != null && local.isNotEmpty) {
+            await GlobalPlayerController().initializeForVideo(
+              videoId: 'local',
+              videoUrl: local,
+            );
+            return;
+          }
+          if (Platform.environment['FLUXTUBE_MEM_SAME_URL'] == '1' &&
+              _sameStreamUrl != null) {
+            await GlobalPlayerController().initializeForVideo(
+              videoId: videoId,
+              videoUrl: _sameStreamUrl!,
+            );
+            return;
+          }
+          final info = await NewPipeChannel.getStreamInfo(videoId);
+          String? url;
+          for (final NewPipeVideoStream stream
+              in info.videoStreams ?? const <NewPipeVideoStream>[]) {
+            if (stream.url != null && stream.url!.isNotEmpty) {
+              url = stream.url;
+              break;
+            }
+          }
+          url ??= info.hlsUrl;
+          if (url == null || url.isEmpty) {
+            throw StateError('no stream for $videoId');
+          }
+          _sameStreamUrl = url;
+          await GlobalPlayerController().initializeForVideo(
+            videoId: videoId,
+            videoUrl: url,
+          );
+          if (Platform.environment['FLUXTUBE_MEM_VID_NO'] == '1') {
+            await (GlobalPlayerController().player.platform as dynamic)
+                .setProperty('vid', 'no');
+          }
+        },
+      );
     });
   }
 

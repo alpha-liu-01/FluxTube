@@ -6,6 +6,8 @@ import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/colors.dart';
 import 'package:fluxtube/core/constants.dart';
 import 'package:fluxtube/core/enums.dart';
+import 'package:fluxtube/core/window_layout.dart';
+import 'package:fluxtube/domain/search/models/newpipe/newpipe_search_resp.dart';
 import 'package:fluxtube/domain/subscribes/models/subscribe.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/generated/l10n.dart';
@@ -100,133 +102,217 @@ class _NewPipeSearchResultSectionState
           );
         }).toList();
 
-        return CustomScrollView(
-          controller: _scrollController,
-          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-          slivers: [
-            // Shorts section (horizontal scrollable)
-            if (shortItems.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _ShortsSection(
-                  shorts: shortItems,
-                  locals: widget.locals,
-                ),
-              ),
+        final loadingMore = widget.state.fetchMoreNewPipeSearchResultStatus ==
+            ApiStatus.loading;
 
-            // Regular items list
-            SliverList.separated(
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                  if (index < regularItems.length) {
-                    final result = regularItems[index];
-
-                    if (result.type == "CHANNEL") {
-                      final channelId =
-                          result.channelId ?? result.url?.split("/").last ?? '';
-                      final isSubscribed = subscribeState.subscribedChannels
-                          .any((channel) => channel.id == channelId);
-                      return ChannelWidget(
-                        key: ValueKey('channel_$channelId'),
-                        channelName: result.name,
-                        isVerified: result.isVerified,
-                        subscriberCount: result.subscriberCount,
-                        thumbnail: result.thumbnailUrl,
-                        isSubscribed: isSubscribed,
-                        channelId: channelId,
-                        locals: widget.locals,
-                      );
-                    } else if (result.type == "PLAYLIST") {
-                      final playlistId = result.url?.split('=').last ?? '';
-                      return PlaylistWidget(
-                        key: ValueKey('playlist_$playlistId'),
-                        playlistId: playlistId,
-                        title: result.name,
-                        thumbnail: result.thumbnailUrl,
-                        videoCount: result.streamCount,
-                        uploaderName: result.uploaderName,
-                        uploaderAvatar: result.uploaderAvatarUrl,
-                        onTap: () {
-                          context.goNamed('playlist', pathParameters: {
-                            'playlistId': playlistId,
-                          });
-                        },
-                      );
-                    } else if (result.type == "STREAM") {
-                      final videoId = result.videoId ??
-                          result.url?.split('v=').last.split('&').first ??
-                          '';
-                      final channelId =
-                          result.uploaderUrl?.split("/").last ?? '';
-
-                      // Skip if videoId or channelId is empty
-                      if (videoId.isEmpty || channelId.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-
-                      final isSubscribed = subscribeState.subscribedChannels
-                          .any((channel) => channel.id == channelId);
-                      return GestureDetector(
-                        key: ValueKey('video_$videoId'),
-                        onTap: () {
-                          BlocProvider.of<WatchBloc>(context).add(
-                            WatchEvent.setSelectedVideoBasicDetails(
-                              details: VideoBasicInfo(
-                                id: videoId,
-                                title: result.name,
-                                thumbnailUrl: result.thumbnailUrl,
-                                channelName: result.uploaderName,
-                                channelThumbnailUrl: result.uploaderAvatarUrl,
-                                channelId: channelId,
-                                uploaderVerified: result.uploaderVerified,
-                              ),
-                            ),
-                          );
-                          context.goNamed('watch', pathParameters: {
-                            'videoId': videoId,
-                            'channelId': channelId,
-                          });
-                        },
-                        child: NewPipeSearchVideoInfoCardWidget(
-                          channelId: channelId,
-                          cardInfo: result,
-                          isSubscribed: isSubscribed,
-                          onSubscribeTap: () {
-                            if (isSubscribed) {
-                              BlocProvider.of<SubscribeBloc>(context).add(
-                                  SubscribeEvent.deleteSubscribeInfo(
-                                      id: channelId));
-                            } else {
-                              BlocProvider.of<SubscribeBloc>(context).add(
-                                SubscribeEvent.addSubscribe(
-                                  channelInfo: Subscribe(
-                                    id: channelId,
-                                    channelName: result.uploaderName ??
-                                        widget.locals.noUploaderName,
-                                    isVerified:
-                                        result.uploaderVerified ?? false,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    } else {
-                      return const SizedBox();
-                    }
-                  } else {
-                    // Only show loading indicator when actually loading more
-                    return cIndicator(context);
-                  }
-                },
-              // Only add extra item when loading more results
-              itemCount: regularItems.length +
-                  (widget.state.fetchMoreNewPipeSearchResultStatus == ApiStatus.loading ? 1 : 0),
-            ),
-          ],
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth.isFinite
+                ? WindowLayout.cardColumns(constraints.maxWidth)
+                : 1;
+            return CustomScrollView(
+              controller: _scrollController,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+              slivers: [
+                if (shortItems.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _ShortsSection(
+                      shorts: shortItems,
+                      locals: widget.locals,
+                    ),
+                  ),
+                if (columns == 1)
+                  _buildItemList(regularItems, subscribeState, loadingMore)
+                else
+                  ..._buildWideSlivers(
+                    regularItems,
+                    subscribeState,
+                    columns,
+                    loadingMore,
+                  ),
+              ],
+            );
+          },
         );
       },
     );
+  }
+
+  Widget _buildItemList(
+    List<NewPipeSearchItem> regularItems,
+    SubscribeState subscribeState,
+    bool loadingMore,
+  ) {
+    return SliverList.separated(
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        if (index < regularItems.length) {
+          return _buildRegularItem(regularItems[index], subscribeState);
+        }
+        return cIndicator(context);
+      },
+      itemCount: regularItems.length + (loadingMore ? 1 : 0),
+    );
+  }
+
+  List<Widget> _buildWideSlivers(
+    List<NewPipeSearchItem> regularItems,
+    SubscribeState subscribeState,
+    int columns,
+    bool loadingMore,
+  ) {
+    final slivers = <Widget>[];
+    final row = <NewPipeSearchItem>[];
+
+    void flushRow() {
+      if (row.isEmpty) return;
+      final items = List<NewPipeSearchItem>.from(row);
+      row.clear();
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var column = 0; column < columns; column++) ...[
+                  if (column > 0) const SizedBox(width: 12),
+                  Expanded(
+                    child: column < items.length
+                        ? _buildRegularItem(
+                            items[column],
+                            subscribeState,
+                            aspectRatioThumbnail: true,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final result in regularItems) {
+      if (result.type == 'STREAM') {
+        row.add(result);
+        if (row.length == columns) flushRow();
+      } else {
+        flushRow();
+        slivers.add(
+          SliverToBoxAdapter(
+            child: _buildRegularItem(result, subscribeState),
+          ),
+        );
+      }
+    }
+    flushRow();
+
+    if (loadingMore) {
+      slivers.add(SliverToBoxAdapter(child: cIndicator(context)));
+    }
+    return slivers;
+  }
+
+  Widget _buildRegularItem(
+    NewPipeSearchItem result,
+    SubscribeState subscribeState, {
+    bool aspectRatioThumbnail = false,
+  }) {
+    if (result.type == 'CHANNEL') {
+      final channelId = result.channelId ?? result.url?.split('/').last ?? '';
+      final isSubscribed = subscribeState.subscribedChannels
+          .any((channel) => channel.id == channelId);
+      return ChannelWidget(
+        key: ValueKey('channel_$channelId'),
+        channelName: result.name,
+        isVerified: result.isVerified,
+        subscriberCount: result.subscriberCount,
+        thumbnail: result.thumbnailUrl,
+        isSubscribed: isSubscribed,
+        channelId: channelId,
+        locals: widget.locals,
+      );
+    }
+
+    if (result.type == 'PLAYLIST') {
+      final playlistId = result.url?.split('=').last ?? '';
+      return PlaylistWidget(
+        key: ValueKey('playlist_$playlistId'),
+        playlistId: playlistId,
+        title: result.name,
+        thumbnail: result.thumbnailUrl,
+        videoCount: result.streamCount,
+        uploaderName: result.uploaderName,
+        uploaderAvatar: result.uploaderAvatarUrl,
+        onTap: () {
+          context.goNamed('playlist', pathParameters: {
+            'playlistId': playlistId,
+          });
+        },
+      );
+    }
+
+    if (result.type == 'STREAM') {
+      final videoId =
+          result.videoId ?? result.url?.split('v=').last.split('&').first ?? '';
+      final channelId = result.uploaderUrl?.split('/').last ?? '';
+
+      if (videoId.isEmpty || channelId.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      final isSubscribed = subscribeState.subscribedChannels
+          .any((channel) => channel.id == channelId);
+      return GestureDetector(
+        key: ValueKey('video_$videoId'),
+        onTap: () {
+          BlocProvider.of<WatchBloc>(context).add(
+            WatchEvent.setSelectedVideoBasicDetails(
+              details: VideoBasicInfo(
+                id: videoId,
+                title: result.name,
+                thumbnailUrl: result.thumbnailUrl,
+                channelName: result.uploaderName,
+                channelThumbnailUrl: result.uploaderAvatarUrl,
+                channelId: channelId,
+                uploaderVerified: result.uploaderVerified,
+              ),
+            ),
+          );
+          context.goNamed('watch', pathParameters: {
+            'videoId': videoId,
+            'channelId': channelId,
+          });
+        },
+        child: NewPipeSearchVideoInfoCardWidget(
+          channelId: channelId,
+          cardInfo: result,
+          isSubscribed: isSubscribed,
+          aspectRatioThumbnail: aspectRatioThumbnail,
+          onSubscribeTap: () {
+            if (isSubscribed) {
+              BlocProvider.of<SubscribeBloc>(context).add(
+                  SubscribeEvent.deleteSubscribeInfo(id: channelId));
+            } else {
+              BlocProvider.of<SubscribeBloc>(context).add(
+                SubscribeEvent.addSubscribe(
+                  channelInfo: Subscribe(
+                    id: channelId,
+                    channelName:
+                        result.uploaderName ?? widget.locals.noUploaderName,
+                    isVerified: result.uploaderVerified ?? false,
+                  ),
+                ),
+              );
+            }
+          },
+        ),
+      );
+    }
+
+    return const SizedBox();
   }
 }
 

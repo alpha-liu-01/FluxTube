@@ -2,16 +2,15 @@
 
 ![GasTube](doc/banner.png)
 
-GasTube is a GPL-3.0 fork of [FluxTube](https://github.com/mu-fazil-vk/FluxTube) by Muhammed Fazil vk. It is an ad-free YouTube client for Android, Windows, and Linux. Watch videos without ads, subscribe to channels, retrieve video dislikes, read comments, save videos, and more.
+GasTube is a GPL-3.0 fork of [FluxTube](https://github.com/alpha-liu-01/GasTube) by Muhammed Fazil vk. It is an ad-free YouTube client for Android, Windows, and Linux. Watch videos without ads, subscribe to channels, retrieve video dislikes, read comments, save videos, and more.
 
 GasTube is not an official FluxTube release.
 
 <p align="center">
-<a href="https://github.com/mu-fazil-vk/FluxTube/releases" alt="FluxTube GitHub release"><img src="https://img.shields.io/github/release/mu-fazil-vk/FluxTube.svg" ></a>
+<a href="https://github.com/alpha-liu-01/GasTube/releases" alt="FluxTube GitHub release"><img src="https://img.shields.io/github/release/alpha-liu-01/GasTube.svg" ></a>
 <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" alt="GPL v3"><img src="https://shields.io/badge/License-GPL%20v3-blue.svg" ></a>
-  <a href="https://github.com/mu-fazil-vk/FluxTube" alt="Flutter"><img src="https://shields.io/badge/Flutter-v3.47.1-blue.svg" ></a>
-  <a href="https://github.com/mu-fazil-vk/FluxTube/releases" alt="FluxTube downloads"><img src="https://img.shields.io/github/downloads/mu-fazil-vk/FluxTube/total.svg?label=FluxTube+Downloads" ></a>
-  <a title="FluxTube on Crowdin" target="_blank" href="https://crowdin.com/project/fluxtube"><img src="https://badges.crowdin.net/fluxtube/localized.svg"></a>
+  <a href="https://github.com/alpha-liu-01/GasTube" alt="Flutter"><img src="https://shields.io/badge/Flutter-v3.47.1-blue.svg" ></a>
+  <a href="https://github.com/alpha-liu-01/GasTube/releases" alt="GasTube downloads"><img src="https://img.shields.io/github/downloads/alpha-liu-01/GasTube/total.svg?label=GasTube+Downloads" ></a>
 </p>
 
 The release and download badges above are for FluxTube, the upstream project. They are not GasTube downloads.
@@ -59,7 +58,7 @@ Some features are only available when using the NewPipe Extractor service.
 FluxTube's Android releases stay with the original project:
 
 <p>
-  <a href="https://github.com/mu-fazil-vk/FluxTube/releases">
+  <a href="https://github.com/alpha-liu-01/GasTube/releases">
     <img alt="FluxTube on GitHub" src="doc/get-it-on-gb.png" width="200">
   </a>
 </p>

@@ -1,6 +1,6 @@
 # GasTube
 
-![GasTube](doc/banner.jpg)
+![GasTube](doc/banner.png)
 
 GasTube is a GPL-3.0 fork of [FluxTube](https://github.com/mu-fazil-vk/FluxTube) by Muhammed Fazil vk. It is an ad-free YouTube client for Android, Windows, and Linux. Watch videos without ads, subscribe to channels, retrieve video dislikes, read comments, save videos, and more.
 

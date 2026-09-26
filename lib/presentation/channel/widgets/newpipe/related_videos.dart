@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/application.dart';
 import 'package:fluxtube/core/constants.dart';
+import 'package:fluxtube/core/window_layout.dart';
+import 'package:fluxtube/widgets/card_row.dart';
 import 'package:fluxtube/domain/channel/models/newpipe/newpipe_channel_resp.dart';
 import 'package:fluxtube/domain/watch/models/basic_info.dart';
 import 'package:fluxtube/domain/watch/models/newpipe/newpipe_related.dart';
@@ -128,53 +130,92 @@ class _NewPipeChannelRelatedVideoSectionState
       );
     }
 
-    return ListView.separated(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      scrollDirection: Axis.vertical,
-      itemBuilder: (context, index) {
-        if (index < _allVideos.length) {
-          final NewPipeRelatedStream videoInfo = _allVideos[index];
-          // NewPipe uses url like "/watch?v=VIDEO_ID"
-          final String videoId = videoInfo.url?.split('=').last ?? '';
-          // uploaderUrl is like "/channel/CHANNEL_ID"
-          final String videoChannelId =
-              videoInfo.uploaderUrl?.split("/").last ?? widget.channelId;
-
-          return NewPipeChannelVideoCard(
-            videoInfo: videoInfo,
-            channelId: videoChannelId,
-            subscribeRowVisible: false,
-            index: index,
-            onTap: () {
-              BlocProvider.of<WatchBloc>(context).add(
-                  WatchEvent.setSelectedVideoBasicDetails(
-                      details: VideoBasicInfo(
-                          id: videoId,
-                          title: videoInfo.name,
-                          thumbnailUrl: videoInfo.thumbnailUrl,
-                          channelName: videoInfo.uploaderName,
-                          channelThumbnailUrl: videoInfo.uploaderAvatarUrl,
-                          channelId: videoChannelId,
-                          uploaderVerified: videoInfo.uploaderVerified)));
-              context.pushNamed('watch', pathParameters: {
-                'videoId': videoId,
-                'channelId': videoChannelId,
-              });
-            },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth.isFinite
+            ? WindowLayout.cardColumns(constraints.maxWidth)
+            : 1;
+        if (columns == 1) {
+          return ListView.separated(
+            controller: _scrollController,
+            padding: EdgeInsets.zero,
+            scrollDirection: Axis.vertical,
+            itemBuilder: (context, index) =>
+                _videoItem(context, index, aspectRatioThumbnail: false),
+            separatorBuilder: (context, index) => kWidthBox10,
+            itemCount: _allVideos.length + (_isLoadingMore ? 1 : 0),
           );
-        } else {
-          // Show loading indicator at the end
-          return _isLoadingMore
-              ? const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              : const SizedBox();
         }
+        final rowCount = (_allVideos.length / columns).ceil();
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: rowCount + (_isLoadingMore ? 1 : 0),
+          itemBuilder: (context, row) {
+            if (row >= rowCount) return _loadingMore();
+            final start = row * columns;
+            return CardRow(
+              columns: columns,
+              children: [
+                for (var column = 0;
+                    column < columns && start + column < _allVideos.length;
+                    column++)
+                  _videoItem(
+                    context,
+                    start + column,
+                    aspectRatioThumbnail: true,
+                  ),
+              ],
+            );
+          },
+        );
       },
-      separatorBuilder: (context, index) => kWidthBox10,
-      itemCount: _allVideos.length + (_isLoadingMore ? 1 : 0),
+    );
+  }
+
+  Widget _loadingMore() {
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _videoItem(
+    BuildContext context,
+    int index, {
+    required bool aspectRatioThumbnail,
+  }) {
+    if (index >= _allVideos.length) {
+      return _isLoadingMore ? _loadingMore() : const SizedBox();
+    }
+    final NewPipeRelatedStream videoInfo = _allVideos[index];
+    // NewPipe uses url like "/watch?v=VIDEO_ID"
+    final String videoId = videoInfo.url?.split('=').last ?? '';
+    // uploaderUrl is like "/channel/CHANNEL_ID"
+    final String videoChannelId =
+        videoInfo.uploaderUrl?.split("/").last ?? widget.channelId;
+
+    return NewPipeChannelVideoCard(
+      videoInfo: videoInfo,
+      channelId: videoChannelId,
+      subscribeRowVisible: false,
+      index: index,
+      aspectRatioThumbnail: aspectRatioThumbnail,
+      onTap: () {
+        BlocProvider.of<WatchBloc>(context).add(
+            WatchEvent.setSelectedVideoBasicDetails(
+                details: VideoBasicInfo(
+                    id: videoId,
+                    title: videoInfo.name,
+                    thumbnailUrl: videoInfo.thumbnailUrl,
+                    channelName: videoInfo.uploaderName,
+                    channelThumbnailUrl: videoInfo.uploaderAvatarUrl,
+                    channelId: videoChannelId,
+                    uploaderVerified: videoInfo.uploaderVerified)));
+        context.pushNamed('watch', pathParameters: {
+          'videoId': videoId,
+          'channelId': videoChannelId,
+        });
+      },
     );
   }
 }

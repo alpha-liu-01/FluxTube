@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/subscribe/subscribe_bloc.dart';
 import 'package:fluxtube/core/colors.dart';
+import 'package:fluxtube/core/window_layout.dart';
 import 'package:fluxtube/domain/channel/models/newpipe/newpipe_channel_resp.dart';
 import 'package:fluxtube/domain/watch/models/newpipe/newpipe_related.dart';
 import 'package:fluxtube/generated/l10n.dart';
@@ -167,24 +168,14 @@ class _NewPipeChannelTabContentState extends State<NewPipeChannelTabContent> {
       return _buildChannelsList(context, _allContent);
     } else {
       // Default: show as video list (works for videos, livestreams, albums, etc.)
-      return ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _allContent.length + (_isLoadingMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index < _allContent.length) {
-            final video = _allContent[index];
-            return NewPipeChannelVideoCard(
-              videoInfo: video,
-              channelId: widget.channelId,
-            );
-          } else {
-            // Show loading indicator at the end
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
+      return _buildCardRows(
+        itemCount: _allContent.length,
+        itemBuilder: (context, index, aspectRatioThumbnail) {
+          return NewPipeChannelVideoCard(
+            videoInfo: _allContent[index],
+            channelId: widget.channelId,
+            aspectRatioThumbnail: aspectRatioThumbnail,
+          );
         },
       );
     }
@@ -263,39 +254,47 @@ class _NewPipeChannelTabContentState extends State<NewPipeChannelTabContent> {
   }
 
   Widget _buildShortsGrid(BuildContext context, List<NewPipeRelatedStream> content) {
-    return GridView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 9 / 16,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: content.length + (_isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index < content.length) {
-          final item = content[index];
-          return GestureDetector(
-            onTap: () => _onShortTap(context, content, index),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: ThumbnailImage.small(url: item.thumbnailUrl ?? ''),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth.isFinite
+            ? WindowLayout.shortsColumns(constraints.maxWidth)
+            : 3;
+        return CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(8),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  childAspectRatio: 9 / 16,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = content[index];
+                    return GestureDetector(
+                      onTap: () => _onShortTap(context, content, index),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: ThumbnailImage.small(url: item.thumbnailUrl ?? ''),
+                      ),
+                    );
+                  },
+                  childCount: content.length,
+                ),
+              ),
             ),
-          );
-        } else {
-          // Loading indicator spans all columns
-          return GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              SizedBox(),
-              Center(child: CircularProgressIndicator()),
-              SizedBox(),
-            ],
-          );
-        }
+            if (_isLoadingMore)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
+        );
       },
     );
   }
@@ -327,36 +326,79 @@ class _NewPipeChannelTabContentState extends State<NewPipeChannelTabContent> {
   }
 
   Widget _buildPlaylistList(BuildContext context, List<NewPipeRelatedStream> content) {
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: content.length + (_isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index < content.length) {
-          final item = content[index];
-          final playlistId = item.url?.split('=').last ?? '';
+    return _buildCardRows(
+      itemCount: content.length,
+      itemBuilder: (context, index, aspectRatioThumbnail) {
+        final item = content[index];
+        final playlistId = item.url?.split('=').last ?? '';
+        return PlaylistWidget(
+          playlistId: playlistId,
+          title: item.name,
+          thumbnail: item.thumbnailUrl,
+          videoCount: item.streamCount ?? 0,
+          uploaderName: item.playlistUploaderName ?? item.uploaderName,
+          uploaderAvatar: item.uploaderAvatarUrl,
+          aspectRatioThumbnail: aspectRatioThumbnail,
+          onTap: () {
+            context.pushNamed('playlist', pathParameters: {
+              'playlistId': playlistId,
+            });
+          },
+        );
+      },
+    );
+  }
 
-          return PlaylistWidget(
-            playlistId: playlistId,
-            title: item.name,
-            thumbnail: item.thumbnailUrl,
-            videoCount: item.streamCount ?? 0,
-            // Use playlist-specific uploader fields
-            uploaderName: item.playlistUploaderName ?? item.uploaderName,
-            uploaderAvatar: item.uploaderAvatarUrl,
-            onTap: () {
-              // Use pushNamed to maintain navigation stack
-              context.pushNamed('playlist', pathParameters: {
-                'playlistId': playlistId,
-              });
+  Widget _buildCardRows({
+    required int itemCount,
+    required Widget Function(
+      BuildContext context,
+      int index,
+      bool aspectRatioThumbnail,
+    ) itemBuilder,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth.isFinite
+            ? WindowLayout.cardColumns(constraints.maxWidth)
+            : 1;
+        if (columns == 1) {
+          return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: itemCount + (_isLoadingMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= itemCount) return _loadingMore();
+              return itemBuilder(context, index, false);
             },
           );
-        } else {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          );
         }
+        final rowCount = itemCount == 0 ? 0 : (itemCount / columns).ceil();
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: rowCount + (_isLoadingMore ? 1 : 0),
+          itemBuilder: (context, row) {
+            if (row >= rowCount) return _loadingMore();
+            final start = row * columns;
+            return CardRow(
+              columns: columns,
+              children: [
+                for (var column = 0;
+                    column < columns && start + column < itemCount;
+                    column++)
+                  itemBuilder(context, start + column, true),
+              ],
+            );
+          },
+        );
       },
+    );
+  }
+
+  Widget _loadingMore() {
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 

@@ -18,4 +18,13 @@ void main() {
     expect(WindowLayout.cardColumns(1099), 2);
     expect(WindowLayout.cardColumns(1100), 3);
   });
+
+  test('shorts columns stay 3 below 720, then 4, 5, and 6', () {
+    expect(WindowLayout.shortsColumns(719), 3);
+    expect(WindowLayout.shortsColumns(720), 4);
+    expect(WindowLayout.shortsColumns(899), 4);
+    expect(WindowLayout.shortsColumns(900), 5);
+    expect(WindowLayout.shortsColumns(1099), 5);
+    expect(WindowLayout.shortsColumns(1100), 6);
+  });
 }

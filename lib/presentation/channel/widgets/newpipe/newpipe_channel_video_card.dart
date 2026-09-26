@@ -24,6 +24,7 @@ class NewPipeChannelVideoCard extends StatelessWidget {
     this.onSubscribeTap,
     this.onTap,
     this.index = 0,
+    this.aspectRatioThumbnail = false,
   });
 
   final NewPipeRelatedStream videoInfo;
@@ -33,6 +34,9 @@ class NewPipeChannelVideoCard extends StatelessWidget {
   final VoidCallback? onSubscribeTap;
   final VoidCallback? onTap;
   final int index;
+
+  /// 16:9 thumbnail with no outer horizontal padding, for a multi-column row.
+  final bool aspectRatioThumbnail;
 
   @override
   Widget build(BuildContext context) {
@@ -51,74 +55,24 @@ class NewPipeChannelVideoCard extends StatelessWidget {
         onTap: onTap,
         onLongPress: () => _showQueueOptions(context, videoInfo, channelId),
         child: Padding(
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             top: AppSpacing.xs,
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
+            left: aspectRatioThumbnail ? 0 : AppSpacing.lg,
+            right: aspectRatioThumbnail ? 0 : AppSpacing.lg,
             bottom: AppSpacing.md,
           ),
           child: Column(
             children: [
               // Thumbnail container
-              Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                width: double.infinity,
-                height: 210,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceVariantDark
-                      : AppColors.surfaceVariant,
-                  borderRadius: AppRadius.borderMd,
-                ),
-                child: ClipRRect(
-                  borderRadius: AppRadius.borderMd,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Thumbnail image
-                      if (videoInfo.thumbnailUrl != null)
-                        ThumbnailImage.small(url: videoInfo.thumbnailUrl!),
-
-                      // Duration badge
-                      Positioned(
-                        bottom: AppSpacing.sm,
-                        right: AppSpacing.sm,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xxs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isLiveVideo
-                                ? AppColors.youtubeRed
-                                : kBlackColor,
-                            borderRadius: AppRadius.borderXs,
-                          ),
-                          child: Text(
-                            duration,
-                            style: TextStyle(
-                              color: kWhiteColor,
-                              fontSize: AppFontSize.caption,
-                              fontWeight: isLiveVideo
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                            ),
-                          ),
-                        ),
+              aspectRatioThumbnail
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: _thumbnail(isDark, duration, isLiveVideo),
                       ),
-                      // Content availability badge (top left)
-                      if (videoInfo.contentAvailability != null)
-                        Positioned(
-                          top: AppSpacing.sm,
-                          left: AppSpacing.sm,
-                          child: ContentAvailabilityBadge(
-                            availability: videoInfo.contentAvailability!,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+                    )
+                  : _thumbnail(isDark, duration, isLiveVideo),
 
               // Video info section
               Padding(
@@ -165,6 +119,59 @@ class NewPipeChannelVideoCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _thumbnail(bool isDark, String duration, bool isLiveVideo) {
+    return Container(
+      margin: EdgeInsets.only(bottom: aspectRatioThumbnail ? 0 : AppSpacing.sm),
+      width: double.infinity,
+      height: aspectRatioThumbnail ? null : 210,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
+        borderRadius: AppRadius.borderMd,
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.borderMd,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (videoInfo.thumbnailUrl != null)
+              ThumbnailImage.small(url: videoInfo.thumbnailUrl!),
+            Positioned(
+              bottom: AppSpacing.sm,
+              right: AppSpacing.sm,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xxs,
+                ),
+                decoration: BoxDecoration(
+                  color: isLiveVideo ? AppColors.youtubeRed : kBlackColor,
+                  borderRadius: AppRadius.borderXs,
+                ),
+                child: Text(
+                  duration,
+                  style: TextStyle(
+                    color: kWhiteColor,
+                    fontSize: AppFontSize.caption,
+                    fontWeight:
+                        isLiveVideo ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            if (videoInfo.contentAvailability != null)
+              Positioned(
+                top: AppSpacing.sm,
+                left: AppSpacing.sm,
+                child: ContentAvailabilityBadge(
+                  availability: videoInfo.contentAvailability!,
+                ),
+              ),
+          ],
         ),
       ),
     );

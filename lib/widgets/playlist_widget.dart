@@ -15,6 +15,7 @@ class PlaylistWidget extends StatelessWidget {
     this.uploaderAvatar,
     this.description,
     this.onTap,
+    this.aspectRatioThumbnail = false,
   });
 
   final String playlistId;
@@ -26,6 +27,9 @@ class PlaylistWidget extends StatelessWidget {
   final String? description;
   final VoidCallback? onTap;
 
+  /// 16:9 thumbnail with no outer horizontal padding, for a multi-column row.
+  final bool aspectRatioThumbnail;
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -33,66 +37,26 @@ class PlaylistWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.only(top: 5, left: 20, right: 20, bottom: 10),
+        padding: EdgeInsets.only(
+          top: 5,
+          left: aspectRatioThumbnail ? 0 : 20,
+          right: aspectRatioThumbnail ? 0 : 20,
+          bottom: 10,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Thumbnail with video count overlay
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: kGreyColor,
-                    borderRadius: BorderRadius.circular(20),
-                    image: thumbnail != null
-                        ? DecorationImage(
-                            image: cachedThumbnailProvider(thumbnail!),
-                            fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {},
-                          )
-                        : null,
+            aspectRatioThumbnail
+                ? AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: _thumbnailStack(),
+                  )
+                : SizedBox(
+                    height: 200,
+                    width: double.infinity,
+                    child: _thumbnailStack(),
                   ),
-                ),
-                // Video count badge on right side
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: kBlackColor.withValues(alpha: 0.8),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.playlist_play,
-                          color: kWhiteColor,
-                          size: 32,
-                        ),
-                        kHeightBox5,
-                        Text(
-                          '${_formatVideoCount(videoCount)} videos',
-                          style: const TextStyle(
-                            color: kWhiteColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
             kHeightBox10,
             // Playlist info
             Padding(
@@ -171,6 +135,63 @@ class PlaylistWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _thumbnailStack() {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: kGreyColor,
+              borderRadius: BorderRadius.circular(20),
+              image: thumbnail != null
+                  ? DecorationImage(
+                      image: cachedThumbnailProvider(thumbnail!),
+                      fit: BoxFit.cover,
+                      onError: (exception, stackTrace) {},
+                    )
+                  : null,
+            ),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            width: 100,
+            decoration: BoxDecoration(
+              color: kBlackColor.withValues(alpha: 0.8),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.playlist_play,
+                  color: kWhiteColor,
+                  size: 32,
+                ),
+                kHeightBox5,
+                Text(
+                  '${_formatVideoCount(videoCount)} videos',
+                  style: const TextStyle(
+                    color: kWhiteColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

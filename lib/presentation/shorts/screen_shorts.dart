@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,6 +73,8 @@ class _ScreenShortsState extends State<ScreenShorts> {
   late PageController _pageController;
   late List<_ShortVideoController> _controllers;
   int _currentIndex = 0;
+  bool _wheelLocked = false;
+  Timer? _wheelUnlock;
 
   @override
   void initState() {
@@ -113,6 +116,7 @@ class _ScreenShortsState extends State<ScreenShorts> {
     for (var controller in _controllers) {
       controller.dispose();
     }
+    _wheelUnlock?.cancel();
     _pageController.dispose();
 
     // Note: We don't auto-resume the global player here because
@@ -176,6 +180,45 @@ class _ScreenShortsState extends State<ScreenShorts> {
     _loadVideo(index);
   }
 
+  void _onMouseWheel(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent ||
+        event.kind != PointerDeviceKind.mouse) {
+      return;
+    }
+    GestureBinding.instance.pointerSignalResolver.register(
+      event,
+      _advanceShortFromWheel,
+    );
+  }
+
+  void _advanceShortFromWheel(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent ||
+        _wheelLocked ||
+        !_pageController.hasClients) {
+      return;
+    }
+    final dy = event.scrollDelta.dy;
+    if (dy == 0) return;
+    final current = _pageController.page?.round() ?? _currentIndex;
+    final target = dy > 0 ? current + 1 : current - 1;
+    if (target < 0 || target >= widget.shorts.length) return;
+
+    _wheelLocked = true;
+    _wheelUnlock?.cancel();
+    _pageController
+        .animateToPage(
+          target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+        )
+        .whenComplete(() {
+      if (!mounted) return;
+      _wheelUnlock = Timer(const Duration(milliseconds: 300), () {
+        _wheelLocked = false;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final locals = S.of(context);
@@ -207,14 +250,17 @@ class _ScreenShortsState extends State<ScreenShorts> {
           final short = widget.shorts[index];
           final controller = _controllers[index];
 
-          return _ShortVideoPage(
-            short: short,
-            controller: controller,
-            isActive: index == _currentIndex,
-            onComment: () => _handleComment(short),
-            onShare: () => _handleShare(short),
-            onChannelTap: () => _handleChannelTap(short),
-            onQualityTap: () => _showQualitySheet(controller),
+          return Listener(
+            onPointerSignal: _onMouseWheel,
+            child: _ShortVideoPage(
+              short: short,
+              controller: controller,
+              isActive: index == _currentIndex,
+              onComment: () => _handleComment(short),
+              onShare: () => _handleShare(short),
+              onChannelTap: () => _handleChannelTap(short),
+              onQualityTap: () => _showQualitySheet(controller),
+            ),
           );
         },
       ),

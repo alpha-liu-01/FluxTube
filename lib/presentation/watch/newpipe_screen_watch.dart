@@ -50,7 +50,10 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   // Survives a layout change. Replaced only when the video id changes.
   GlobalKey _playerKey = GlobalKey();
   GlobalKey _commentKey = GlobalKey();
-  final ScrollController _watchScroll = ScrollController();
+  // A new video opens at the top. The dismiss widget is keyed by video id,
+  // which recreates this scroll view, so a saved offset must not come back.
+  final ScrollController _watchScroll =
+      ScrollController(keepScrollOffset: false);
   bool _slidePopped = false;
   void _enterAppPipAndPop() {
     GlobalPlayerController().enterPipMode();
@@ -132,6 +135,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
           '[NewPipeScreenWatch] Video ID changed from ${oldWidget.id} to ${widget.id}');
       _playerKey = GlobalKey();
       _commentKey = GlobalKey();
+      _slidePopped = false;
       // Reset player visibility for new video
       setState(() {
         _showPlayer = false;
@@ -331,6 +335,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                     );
                   } else {
                     return _SlideDownDismiss(
+                      key: ValueKey(widget.id),
                       onDismissed: _popFromSlide,
                       child: PopScope(
                         canPop: true,
@@ -379,6 +384,15 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                     },
                                     child: SingleChildScrollView(
                                       controller: _watchScroll,
+                                      physics: _WatchSlidePhysics(
+                                        blockUpwardScroll: () {
+                                          if (!context.mounted) return false;
+                                          return _SlideDownDismiss.maybeOf(
+                                                      context)
+                                                  ?.holdingScroll ??
+                                              false;
+                                        },
+                                      ),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
@@ -692,6 +706,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
 
 class _SlideDownDismiss extends StatefulWidget {
   const _SlideDownDismiss({
+    super.key,
     required this.child,
     required this.onDismissed,
   });
@@ -715,13 +730,14 @@ class _SlideDownDismissState extends State<_SlideDownDismiss>
   bool _tracking = false;
   bool _settling = false;
 
+  /// True while a finger or mouse button is pulling the page down, so an
+  /// upward drag pulls the page back instead of scrolling the column.
+  bool get holdingScroll => _tracking && _offset.value > 0;
+
   @override
   void initState() {
     super.initState();
-    _offset = AnimationController.unbounded(vsync: this)
-      ..addListener(() {
-        if (mounted) setState(() {});
-      });
+    _offset = AnimationController.unbounded(vsync: this);
   }
 
   @override
@@ -732,28 +748,27 @@ class _SlideDownDismissState extends State<_SlideDownDismiss>
 
   void handle(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical || _settling) return;
-    if (notification is! OverscrollNotification &&
-        notification is! ScrollUpdateNotification) {
-      if (notification is ScrollEndNotification) _settle();
+    if (notification is ScrollEndNotification) {
+      _settle();
       return;
     }
+    if (notification is! OverscrollNotification) return;
+    // A wheel tick has no drag details. It must scroll, not slide.
+    if (notification.dragDetails == null) return;
 
-    final DragUpdateDetails? details = notification is OverscrollNotification
-        ? notification.dragDetails
-        : (notification as ScrollUpdateNotification).dragDetails;
-    final delta = details?.primaryDelta;
-    if (delta == null) return;
-
-    final atTop = notification.metrics.pixels <= 0;
-    if (!_tracking && (!atTop || delta <= 0)) return;
-    if (_tracking && !atTop && _offset.value == 0) {
-      _tracking = false;
+    final overscroll = notification.overscroll;
+    if (overscroll < 0) {
+      if (notification.metrics.pixels > 0) return;
+      _offset.stop();
+      _tracking = true;
+      _offset.value -= overscroll;
       return;
     }
-
-    _offset.stop();
-    _tracking = true;
-    _offset.value = math.max(0.0, _offset.value + delta);
+    if (overscroll > 0 && holdingScroll) {
+      _offset.stop();
+      _offset.value = math.max(0.0, _offset.value - overscroll);
+      if (_offset.value == 0) _tracking = false;
+    }
   }
 
   void _settle({bool cancelled = false}) {
@@ -782,10 +797,40 @@ class _SlideDownDismissState extends State<_SlideDownDismiss>
     return Listener(
       onPointerUp: (_) => _settle(),
       onPointerCancel: (_) => _settle(cancelled: true),
-      child: Transform.translate(
-        offset: Offset(0, _offset.value),
+      child: AnimatedBuilder(
+        animation: _offset,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, _offset.value),
+            child: child,
+          );
+        },
         child: widget.child,
       ),
     );
+  }
+}
+
+/// While the page is sliding down, an upward drag is overscroll instead of
+/// column movement, so the same drag pulls the page back.
+class _WatchSlidePhysics extends ScrollPhysics {
+  const _WatchSlidePhysics({required this.blockUpwardScroll, super.parent});
+
+  final bool Function() blockUpwardScroll;
+
+  @override
+  _WatchSlidePhysics applyTo(ScrollPhysics? ancestor) {
+    return _WatchSlidePhysics(
+      blockUpwardScroll: blockUpwardScroll,
+      parent: buildParent(ancestor),
+    );
+  }
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    if (blockUpwardScroll() && value > position.pixels) {
+      return value - position.pixels;
+    }
+    return super.applyBoundaryConditions(position, value);
   }
 }

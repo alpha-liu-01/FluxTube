@@ -66,39 +66,36 @@ class _NewPipeChannelRelatedVideoSectionState
   Future<void> _loadMore() async {
     if (_nextPage == null || _isLoadingMore) return;
 
+    final videosTab = widget.channelInfo.tabs?.firstWhere(
+      (t) => t.name?.toLowerCase() == 'videos',
+      orElse: () => widget.channelInfo.tabs?.first ?? NewPipeChannelTab(),
+    );
+    final url = videosTab?.url;
+    if (url == null || videosTab == null) return;
+
     setState(() {
       _isLoadingMore = true;
     });
 
     try {
-      // Get the first tab (videos tab) URL for pagination
-      final videosTab = widget.channelInfo.tabs?.firstWhere(
-        (t) => t.name?.toLowerCase() == 'videos',
-        orElse: () => widget.channelInfo.tabs?.first ?? NewPipeChannelTab(),
+      final moreContent = await NewPipeChannel.getChannelTabWithPagination(
+        url,
+        nextPage: _nextPage!,
+        tabId: videosTab.id,
+        contentFilters: videosTab.contentFilters,
       );
 
-      if (videosTab?.url != null) {
-        final moreContent = await NewPipeChannel.getChannelTabWithPagination(
-          videosTab!.url!,
-          nextPage: _nextPage!,
-          tabId: videosTab.id,
-          contentFilters: videosTab.contentFilters,
-        );
-
-        if (mounted) {
-          setState(() {
-            _allVideos.addAll(moreContent.videos ?? []);
-            _nextPage = moreContent.nextPage;
-            _isLoadingMore = false;
-          });
-        }
-      }
+      if (!mounted) return;
+      setState(() {
+        _allVideos.addAll(moreContent.videos ?? []);
+        _nextPage = moreContent.nextPage;
+        _isLoadingMore = false;
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingMore = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMore = false;
+      });
     }
   }
 

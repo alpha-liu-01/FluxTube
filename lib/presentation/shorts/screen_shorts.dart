@@ -73,6 +73,7 @@ class _ScreenShortsState extends State<ScreenShorts> {
   late PageController _pageController;
   late List<_ShortVideoController> _controllers;
   int _currentIndex = 0;
+  BoxFit _fitMode = BoxFit.cover;
   bool _wheelLocked = false;
   Timer? _wheelUnlock;
 
@@ -180,6 +181,18 @@ class _ScreenShortsState extends State<ScreenShorts> {
     _loadVideo(index);
   }
 
+  static const List<BoxFit> _fitModes = [
+    BoxFit.contain,
+    BoxFit.cover,
+    BoxFit.fill,
+  ];
+
+  void _cycleFitMode() {
+    final currentIndex = _fitModes.indexOf(_fitMode);
+    final nextIndex = (currentIndex + 1) % _fitModes.length;
+    setState(() => _fitMode = _fitModes[nextIndex]);
+  }
+
   void _onMouseWheel(PointerSignalEvent event) {
     if (event is! PointerScrollEvent ||
         event.kind != PointerDeviceKind.mouse) {
@@ -260,6 +273,8 @@ class _ScreenShortsState extends State<ScreenShorts> {
               onShare: () => _handleShare(short),
               onChannelTap: () => _handleChannelTap(short),
               onQualityTap: () => _showQualitySheet(controller),
+              fit: _fitMode,
+              onFit: _cycleFitMode,
             ),
           );
         },
@@ -533,6 +548,8 @@ class _ShortVideoPage extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onChannelTap;
   final VoidCallback onQualityTap;
+  final BoxFit fit;
+  final VoidCallback onFit;
 
   const _ShortVideoPage({
     required this.short,
@@ -542,6 +559,8 @@ class _ShortVideoPage extends StatelessWidget {
     required this.onShare,
     required this.onChannelTap,
     required this.onQualityTap,
+    required this.fit,
+    required this.onFit,
   });
 
   @override
@@ -557,12 +576,12 @@ class _ShortVideoPage extends StatelessWidget {
             onTap: () => controller.togglePlayPause(),
             child: Video(
               controller: controller.videoController!,
-              fit: BoxFit.cover,
+              fit: fit,
               controls: NoVideoControls,
             ),
           )
         else if (short.thumbnailUrl != null)
-          ThumbnailImage.small(url: short.thumbnailUrl!)
+          ThumbnailImage.small(url: short.thumbnailUrl!, fit: fit)
         else
           Container(color: kBlackColor),
 
@@ -744,6 +763,12 @@ class _ShortVideoPage extends StatelessWidget {
                 icon: CupertinoIcons.share,
                 label: '',
                 onTap: onShare,
+              ),
+              const SizedBox(height: 20),
+              _ActionButton(
+                icon: _fitModeIcon(fit),
+                label: _fitModeLabel(fit),
+                onTap: onFit,
               ),
             ],
           ),
@@ -933,6 +958,32 @@ class _VideoProgressBarState extends State<_VideoProgressBar> {
         minHeight: 3,
       ),
     );
+  }
+}
+
+IconData _fitModeIcon(BoxFit fitMode) {
+  switch (fitMode) {
+    case BoxFit.contain:
+      return CupertinoIcons.rectangle;
+    case BoxFit.cover:
+      return CupertinoIcons.rectangle_fill;
+    case BoxFit.fill:
+      return CupertinoIcons.rectangle_expand_vertical;
+    default:
+      return CupertinoIcons.rectangle;
+  }
+}
+
+String _fitModeLabel(BoxFit fitMode) {
+  switch (fitMode) {
+    case BoxFit.contain:
+      return 'Fit';
+    case BoxFit.cover:
+      return 'Crop';
+    case BoxFit.fill:
+      return 'Stretch';
+    default:
+      return 'Fit';
   }
 }
 

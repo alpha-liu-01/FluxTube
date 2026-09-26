@@ -57,6 +57,7 @@ app.*.map.json
 android/key.properties
 android/local.properties
 android/app/key.jks
+gastube-release.jks
 
 # Analysis documentation (generated)
 /docs/

@@ -1,5 +1,6 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,10 +49,21 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   // Survives a layout change. Replaced only when the video id changes.
   GlobalKey _playerKey = GlobalKey();
   GlobalKey _commentKey = GlobalKey();
+  final ScrollController _watchScroll = ScrollController();
+  bool _slidePopped = false;
   void _enterAppPipAndPop() {
     GlobalPlayerController().enterPipMode();
     BlocProvider.of<WatchBloc>(context).add(WatchEvent.togglePip(value: true));
     Navigator.pop(context);
+  }
+
+  bool _popFromSlide() {
+    if (_slidePopped || !mounted) return _slidePopped;
+    final navigator = Navigator.of(context);
+    if (!navigator.canPop()) return false;
+    _slidePopped = true;
+    navigator.pop();
+    return true;
   }
 
   @override
@@ -87,6 +99,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   @override
   void dispose() {
     _evictRelatedThumbnails();
+    _watchScroll.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -316,17 +329,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                       ),
                     );
                   } else {
-                    return DismissiblePage(
-                      direction: DismissiblePageDismissDirection.down,
-                      onDismissed: () {
-                        if (!settingsState.isPipDisabled) {
-                          _enterAppPipAndPop();
-                          return;
-                        }
-                        Navigator.pop(context);
-                      },
-                      isFullScreen: true,
-                      key: ValueKey(widget.id),
+                    return _SlideDownDismiss(
+                      onDismissed: _popFromSlide,
                       child: PopScope(
                         canPop: true,
                         onPopInvokedWithResult: (didPop, _) {
@@ -356,14 +360,22 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                   watchInfo: watchInfo,
                                   wide: split,
                                 );
-                                final page = SingleChildScrollView(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      player,
-                                      details,
-                                    ],
+                                final page = NotificationListener<ScrollNotification>(
+                                  onNotification: (notification) {
+                                    _SlideDownDismiss.maybeOf(context)
+                                        ?.handle(notification);
+                                    return false;
+                                  },
+                                  child: SingleChildScrollView(
+                                    controller: _watchScroll,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        player,
+                                        details,
+                                      ],
+                                    ),
                                   ),
                                 );
                                 if (!split) return page;
@@ -663,5 +675,103 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
     if (url == null || url.isEmpty) return null;
     final parts = url.split('/').where((part) => part.isNotEmpty).toList();
     return parts.isEmpty ? null : parts.last;
+  }
+}
+
+class _SlideDownDismiss extends StatefulWidget {
+  const _SlideDownDismiss({
+    required this.child,
+    required this.onDismissed,
+  });
+
+  final Widget child;
+  final bool Function() onDismissed;
+
+  static _SlideDownDismissState? maybeOf(BuildContext context) {
+    return context.findAncestorStateOfType<_SlideDownDismissState>();
+  }
+
+  @override
+  State<_SlideDownDismiss> createState() => _SlideDownDismissState();
+}
+
+class _SlideDownDismissState extends State<_SlideDownDismiss>
+    with SingleTickerProviderStateMixin {
+  static const double _dismissFraction = 0.15;
+
+  late final AnimationController _offset;
+  bool _tracking = false;
+  bool _settling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _offset = AnimationController.unbounded(vsync: this)
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  void handle(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical || _settling) return;
+    if (notification is! OverscrollNotification &&
+        notification is! ScrollUpdateNotification) {
+      if (notification is ScrollEndNotification) _settle();
+      return;
+    }
+
+    final DragUpdateDetails? details = notification is OverscrollNotification
+        ? notification.dragDetails
+        : (notification as ScrollUpdateNotification).dragDetails;
+    final delta = details?.primaryDelta;
+    if (delta == null) return;
+
+    final atTop = notification.metrics.pixels <= 0;
+    if (!_tracking && (!atTop || delta <= 0)) return;
+    if (_tracking && !atTop && _offset.value == 0) {
+      _tracking = false;
+      return;
+    }
+
+    _offset.stop();
+    _tracking = true;
+    _offset.value = math.max(0.0, _offset.value + delta);
+  }
+
+  void _settle({bool cancelled = false}) {
+    if (_settling) return;
+    if (!_tracking && _offset.value == 0) return;
+    _settling = true;
+    _tracking = false;
+    final height = context.size?.height ?? MediaQuery.sizeOf(context).height;
+    final dismiss =
+        !cancelled && height > 0 && _offset.value / height > _dismissFraction;
+    if (dismiss && widget.onDismissed()) return;
+    _offset.animateTo(
+      0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    ).whenComplete(() {
+      if (!mounted) return;
+      _settling = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerUp: (_) => _settle(),
+      onPointerCancel: (_) => _settle(cancelled: true),
+      child: Transform.translate(
+        offset: Offset(0, _offset.value),
+        child: widget.child,
+      ),
+    );
   }
 }

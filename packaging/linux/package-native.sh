@@ -139,15 +139,16 @@ EOF
 pkgname=gastube
 pkgver=${upstream}
 pkgrel=${release}
-pkgdesc='Watch videos'
+pkgdesc='Ad-free YouTube client'
 arch=('${pkg_arch}')
-url='https://github.com/alpha-liu-01/FluxTube'
+url='https://github.com/alpha-liu-01/GasTube'
 license=('GPL-3.0-or-later')
 depends=('gtk3' 'mpv')
 options=('!strip' '!debug')
 
 package() {
   cp -a "${workdir}/arch/payload/." "\${pkgdir}/"
+  install -Dm644 "${root}/LICENSE" "\${pkgdir}/usr/share/licenses/\${pkgname}/LICENSE"
 }
 EOF
     (

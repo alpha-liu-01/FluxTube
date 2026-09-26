@@ -1,0 +1,52 @@
+# Published to the AUR by KSXGitHub/github-actions-deploy-aur.
+# The release tag is v${pkgver}+${pkgrel}. Its asset name matches
+# packaging/linux/build-release.sh.
+pkgname=gastube
+pkgver=0.9.3
+pkgrel=14
+pkgdesc='Ad-free YouTube client'
+arch=('x86_64')
+url='https://github.com/alpha-liu-01/GasTube'
+license=('GPL-3.0-or-later')
+depends=('gtk3' 'mpv')
+options=('!strip' '!debug')
+_tag="v${pkgver}+${pkgrel}"
+_archive="gastube-${pkgver}+${pkgrel}-linux-x64.tar.gz"
+source=(
+  "${_archive}::https://github.com/alpha-liu-01/GasTube/releases/download/${_tag}/${_archive}"
+  "LICENSE::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/LICENSE"
+  "gastube.desktop::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/gastube.desktop"
+  "gastube-16.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/16x16/apps/gastube.png"
+  "gastube-24.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/24x24/apps/gastube.png"
+  "gastube-32.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/32x32/apps/gastube.png"
+  "gastube-48.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/48x48/apps/gastube.png"
+  "gastube-64.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/64x64/apps/gastube.png"
+  "gastube-256.png::https://raw.githubusercontent.com/alpha-liu-01/GasTube/${_tag}/packaging/linux/icons/256x256/apps/gastube.png"
+)
+sha256sums=(
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+  'SKIP'
+)
+
+package() {
+  install -dm755 "${pkgdir}/opt"
+  cp -a "${srcdir}/gastube" "${pkgdir}/opt/"
+  install -dm755 "${pkgdir}/usr/bin"
+  ln -s /opt/gastube/gastube "${pkgdir}/usr/bin/gastube"
+  install -Dm644 "${srcdir}/gastube.desktop" \
+    "${pkgdir}/usr/share/applications/gastube.desktop"
+  local size
+  for size in 16 24 32 48 64 256; do
+    install -Dm644 "${srcdir}/gastube-${size}.png" \
+      "${pkgdir}/usr/share/icons/hicolor/${size}x${size}/apps/gastube.png"
+  done
+  install -Dm644 "${srcdir}/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -16,6 +16,11 @@ class AppInfo {
       url: 'https://github.com/mu-fazil-vk',
       description: 'Founder | Lead Developer',
     ),
+    AppInfoModel(
+      name: 'alpha-liu-01',
+      url: 'https://github.com/alpha-liu-01',
+      description: 'GasTube',
+    ),
   ];
 
   static List<AppInfoModel> translatorsInfos = <AppInfoModel>[

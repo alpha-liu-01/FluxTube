@@ -19,14 +19,15 @@ class AboutSection extends StatelessWidget {
           S.of(context).about,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16),
         ),
-        ListTile(
-          title: Text(S.of(context).developer,
-              style: Theme.of(context).textTheme.titleMedium),
-          subtitle: Text(AppInfo.developerInfos.first.name),
-          leading: const Icon(Icons.code),
-          trailing: const Icon(CupertinoIcons.chat_bubble_2),
-          onTap: () => urlLaunch(AppInfo.developerInfos.first.url),
-        ),
+        for (final developer in AppInfo.developerInfos)
+          ListTile(
+            title: Text(S.of(context).developer,
+                style: Theme.of(context).textTheme.titleMedium),
+            subtitle: Text(developer.name),
+            leading: const Icon(Icons.code),
+            trailing: const Icon(CupertinoIcons.chat_bubble_2),
+            onTap: () => urlLaunch(developer.url),
+          ),
         ListTile(
           title: Text(S.of(context).translators,
               style: Theme.of(context).textTheme.titleMedium),

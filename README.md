@@ -147,10 +147,14 @@ GasTube is free software licensed under GPL v3.0. It is based on FluxTube, which
 
 ## Original author
 
-FluxTube was created by Muhammed Fazil vk. These links are his:
+FluxTube was created by [Muhammed Fazil vk](https://github.com/mu-fazil-vk). GasTube is maintained by [alpha-liu-01](https://github.com/alpha-liu-01).
 
-<p><a href="https://www.buymeacoffee.com/fazilvk"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="50" width="210" alt="fazilvk" /></a></p><br><br>
-<br>
+<p>
+<a href="https://www.buymeacoffee.com/fazilvk"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="50" width="210" alt="fazilvk" /></a>
+<a href="https://buymeacoffee.com/alphaliu01"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="50" width="210" alt="alpha-liu-01" /></a>
+</p>
+
+The contact links below are Muhammed Fazil vk's:
 
 <p align="left">
 <a href="https://t.me/fazilvk" target="blank"><img align="center" src="https://www.freepnglogos.com/uploads/telegram-png/telegram-software-wikipedia-2.png" alt="mu_fazil_vk" height="40" width="40" /></a>

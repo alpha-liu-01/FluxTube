@@ -1,4 +1,4 @@
-# Copy the ARM64 VC++ CRT next to fluxtube.exe and drop any non-ARM64 DLL.
+# Copy the ARM64 VC++ CRT next to gastube.exe and drop any non-ARM64 DLL.
 # vcruntime140_1.dll is x64-only and has no ARM64 counterpart.
 param(
     [Parameter(Mandatory = $true)]

@@ -45,8 +45,8 @@ case "$(uname -m)" in
 esac
 
 bundle="${root}/build/linux/${flutter_arch}/release/bundle"
-if [[ ! -x "${bundle}/fluxtube" ]]; then
-  echo "Release bundle is missing ${bundle}/fluxtube." >&2
+if [[ ! -x "${bundle}/gastube" ]]; then
+  echo "Release bundle is missing ${bundle}/gastube." >&2
   exit 1
 fi
 
@@ -54,10 +54,10 @@ fi
 "${root}/packaging/ffmpeg/bundle-ffmpeg.sh" "${bundle}"
 
 mkdir -p "${root}/dist"
-archive="${root}/dist/fluxtube-${version}-linux-${flutter_arch}.tar.gz"
+archive="${root}/dist/gastube-${version}-linux-${flutter_arch}.tar.gz"
 rm -f "${archive}"
 tar -C "${root}/build/linux/${flutter_arch}/release" \
-  --transform 's,^bundle,fluxtube,' \
+  --transform 's,^bundle,gastube,' \
   -czf "${archive}" \
   bundle
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build newpipe-spike.jar and unpack a headless Temurin 17 JRE into DEST.
-# DEST is the directory that contains fluxtube or fluxtube.exe.
+# DEST is the directory that contains gastube or gastube.exe.
 # The JRE is Eclipse Temurin, GPL-2.0 with the Classpath Exception.
 set -euo pipefail
 

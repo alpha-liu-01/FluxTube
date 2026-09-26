@@ -22,8 +22,8 @@ case "$(uname -m)" in
 esac
 bundle="${root}/build/linux/${flutter_arch}/release/bundle"
 
-if [[ ! -x "${bundle}/fluxtube" ]]; then
-  echo "Release bundle is missing ${bundle}/fluxtube. Run build-release.sh first." >&2
+if [[ ! -x "${bundle}/gastube" ]]; then
+  echo "Release bundle is missing ${bundle}/gastube. Run build-release.sh first." >&2
   exit 1
 fi
 if [[ ! -f /etc/os-release ]]; then
@@ -66,9 +66,9 @@ workdir="$(mktemp -d)"
 trap 'rm -rf "${workdir}"' EXIT
 payload="${workdir}/payload"
 mkdir -p "${payload}/opt" "${payload}/usr/bin" "${payload}/usr/share/applications" "${payload}/usr/share/icons/hicolor"
-cp -a "${bundle}" "${payload}/opt/fluxtube"
-ln -s /opt/fluxtube/fluxtube "${payload}/usr/bin/fluxtube"
-cp "${here}/fluxtube.desktop" "${payload}/usr/share/applications/fluxtube.desktop"
+cp -a "${bundle}" "${payload}/opt/gastube"
+ln -s /opt/gastube/gastube "${payload}/usr/bin/gastube"
+cp "${here}/gastube.desktop" "${payload}/usr/share/applications/gastube.desktop"
 cp -a "${here}/icons/." "${payload}/usr/share/icons/hicolor/"
 
 mkdir -p "${root}/dist"
@@ -82,7 +82,7 @@ case "${family}" in
     mkdir -p "${workdir}/deb/DEBIAN"
     cp -a "${payload}/." "${workdir}/deb/"
     cat > "${workdir}/deb/DEBIAN/control" << EOF
-Package: fluxtube
+Package: gastube
 Version: ${version}
 Architecture: $(dpkg --print-architecture)
 Maintainer: GasTube
@@ -90,7 +90,7 @@ Depends: libgtk-3-0, libmpv2 | libmpv1
 Description: Watch videos
  GasTube desktop build with a bundled Java runtime and ffmpeg.
 EOF
-    deb="${root}/dist/fluxtube_${version}_$(dpkg --print-architecture).deb"
+    deb="${root}/dist/gastube_${version}_$(dpkg --print-architecture).deb"
     dpkg-deb --root-owner-group --build "${workdir}/deb" "${deb}"
     echo "Wrote ${deb}"
     ;;
@@ -101,8 +101,8 @@ EOF
     fi
     mkdir -p "${workdir}/rpm/"{BUILD,RPMS,SOURCES,SPECS,SRPMS}
     cp -a "${payload}" "${workdir}/rpm/SOURCES/payload"
-    cat > "${workdir}/rpm/SPECS/fluxtube.spec" << EOF
-Name: fluxtube
+    cat > "${workdir}/rpm/SPECS/gastube.spec" << EOF
+Name: gastube
 Version: ${upstream}
 Release: ${release}
 Summary: Watch videos
@@ -118,14 +118,14 @@ mkdir -p %{buildroot}
 cp -a %{_sourcedir}/payload/. %{buildroot}/
 
 %files
-/opt/fluxtube
-/usr/bin/fluxtube
-/usr/share/applications/fluxtube.desktop
+/opt/gastube
+/usr/bin/gastube
+/usr/share/applications/gastube.desktop
 /usr/share/icons/hicolor
 EOF
-    rpmbuild --define "_topdir ${workdir}/rpm" -bb "${workdir}/rpm/SPECS/fluxtube.spec"
-    rpm="${root}/dist/fluxtube-${upstream}-${release}.${pkg_arch}.rpm"
-    cp "${workdir}/rpm/RPMS/${pkg_arch}/fluxtube-${upstream}-${release}.${pkg_arch}.rpm" "${rpm}"
+    rpmbuild --define "_topdir ${workdir}/rpm" -bb "${workdir}/rpm/SPECS/gastube.spec"
+    rpm="${root}/dist/gastube-${upstream}-${release}.${pkg_arch}.rpm"
+    cp "${workdir}/rpm/RPMS/${pkg_arch}/gastube-${upstream}-${release}.${pkg_arch}.rpm" "${rpm}"
     echo "Wrote ${rpm}"
     ;;
   arch)
@@ -136,12 +136,12 @@ EOF
     mkdir -p "${workdir}/arch"
     cp -a "${payload}" "${workdir}/arch/payload"
     cat > "${workdir}/arch/PKGBUILD" << EOF
-pkgname=fluxtube
+pkgname=gastube
 pkgver=${upstream}
 pkgrel=${release}
 pkgdesc='Watch videos'
 arch=('${pkg_arch}')
-url='https://github.com/fazilvk/fluxtube'
+url='https://github.com/alpha-liu-01/FluxTube'
 license=('GPL-3.0-or-later')
 depends=('gtk3' 'mpv')
 options=('!strip' '!debug')
@@ -154,6 +154,6 @@ EOF
       cd "${workdir}/arch"
       PKGDEST="${root}/dist" makepkg --nodeps --skipinteg --noconfirm
     )
-    echo "Wrote ${root}/dist/fluxtube-${upstream}-${release}-${pkg_arch}.pkg.tar.zst"
+    echo "Wrote ${root}/dist/gastube-${upstream}-${release}-${pkg_arch}.pkg.tar.zst"
     ;;
 esac

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy a pinned static GPL ffmpeg into DEST, next to fluxtube or fluxtube.exe.
+# Copy a pinned static GPL ffmpeg into DEST, next to gastube or gastube.exe.
 # Build: BtbN/FFmpeg-Builds autobuild-2026-09-22-13-18 (GPL-2.0 or later).
 set -euo pipefail
 

@@ -2,8 +2,8 @@
 Type=Application
 Name=GasTube
 Comment=Watch videos
-Exec=fluxtube
-Icon=fluxtube
+Exec=gastube
+Icon=gastube
 Categories=AudioVideo;Video;Player;
 StartupNotify=true
 Terminal=false

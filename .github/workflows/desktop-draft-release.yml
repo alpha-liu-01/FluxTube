@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64
-          path: dist/fluxtube-*-linux-x64.tar.gz
+          path: dist/gastube-*-linux-x64.tar.gz
           if-no-files-found: error
 
   build-windows:
@@ -110,14 +110,14 @@ jobs:
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
             "/DAppVersion=$version" `
             "/DVersionInfo=$numeric" `
-            "packaging\windows\fluxtube.iss"
-          Get-Item "dist/fluxtube-$version-windows-x64.exe" | Format-List FullName, Length
+            "packaging\windows\gastube.iss"
+          Get-Item "dist/gastube-$version-windows-x64.exe" | Format-List FullName, Length
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/fluxtube-*-windows-x64.exe
+          path: dist/gastube-*-windows-x64.exe
           if-no-files-found: error
 
   build-windows-arm64:
@@ -186,14 +186,14 @@ jobs:
             "/DAppVersion=$version" `
             "/DVersionInfo=$numeric" `
             "/DSetupArch=arm64" `
-            "packaging\windows\fluxtube.iss"
-          Get-Item "dist/fluxtube-$version-windows-arm64.exe" | Format-List FullName, Length
+            "packaging\windows\gastube.iss"
+          Get-Item "dist/gastube-$version-windows-arm64.exe" | Format-List FullName, Length
 
       - name: Upload Windows ARM64 installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-arm64
-          path: dist/fluxtube-*-windows-arm64.exe
+          path: dist/gastube-*-windows-arm64.exe
           if-no-files-found: error
 
   release:
@@ -276,7 +276,7 @@ jobs:
           set -euo pipefail
           gh release create "${{ steps.app_version.outputs.tag }}" release-assets/* \
             --draft \
-            --title "FluxTube ${{ steps.app_version.outputs.version }} desktop" \
+            --title "GasTube ${{ steps.app_version.outputs.version }} desktop" \
             --notes-file RELEASE_NOTES.md
 
       - name: Upload files to the new release

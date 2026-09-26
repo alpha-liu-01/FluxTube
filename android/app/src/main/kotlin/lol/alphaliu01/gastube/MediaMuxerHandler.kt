@@ -1,4 +1,4 @@
-package com.fazilvk.fluxtube
+package lol.alphaliu01.gastube
 
 import android.media.MediaCodec
 import android.media.MediaExtractor

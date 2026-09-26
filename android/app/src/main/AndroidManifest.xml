@@ -104,7 +104,7 @@
         <!-- Google Cast: the framework locates our CastOptions through this. -->
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="com.fazilvk.fluxtube.player.CastOptionsProvider"/>
+            android:value="lol.alphaliu01.gastube.player.CastOptionsProvider"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility?hl=en and

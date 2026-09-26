@@ -158,5 +158,5 @@ jobs:
         run: |
           gh release create "${{ steps.app_version.outputs.tag }}" dist/*.apk \
             --draft \
-            --title "FluxTube ${{ steps.app_version.outputs.version }}" \
+            --title "GasTube ${{ steps.app_version.outputs.version }}" \
             --notes-file RELEASE_NOTES.md

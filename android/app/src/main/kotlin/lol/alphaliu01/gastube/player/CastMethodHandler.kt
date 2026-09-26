@@ -1,4 +1,4 @@
-package com.fazilvk.fluxtube.player
+package lol.alphaliu01.gastube.player
 
 import android.app.Activity
 import android.content.Context

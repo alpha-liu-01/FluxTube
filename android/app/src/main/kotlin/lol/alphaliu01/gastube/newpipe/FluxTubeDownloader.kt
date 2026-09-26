@@ -1,4 +1,4 @@
-package com.fazilvk.fluxtube.newpipe
+package lol.alphaliu01.gastube.newpipe
 
 import okhttp3.OkHttpClient
 import okhttp3.Request

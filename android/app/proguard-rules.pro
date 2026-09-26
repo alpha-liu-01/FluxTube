@@ -56,7 +56,7 @@
 -dontwarn kotlinx.coroutines.**
 
 # Keep data classes for JSON serialization
--keepclassmembers class com.fazilvk.fluxtube.newpipe.models.** { *; }
+-keepclassmembers class lol.alphaliu01.gastube.newpipe.models.** { *; }
 
 # Prevent R8 from removing classes needed at runtime
 -keep class * extends java.lang.Exception
@@ -75,8 +75,8 @@
 -keep class androidx.core.app.NotificationCompat$* { *; }
 
 # MediaMuxer Handler - Keep classes for video/audio muxing
--keep class com.fazilvk.fluxtube.MediaMuxerHandler { *; }
--keepclassmembers class com.fazilvk.fluxtube.MediaMuxerHandler { *; }
+-keep class lol.alphaliu01.gastube.MediaMuxerHandler { *; }
+-keepclassmembers class lol.alphaliu01.gastube.MediaMuxerHandler { *; }
 
 # Android Media APIs used by MediaMuxerHandler
 -keep class android.media.MediaMuxer { *; }

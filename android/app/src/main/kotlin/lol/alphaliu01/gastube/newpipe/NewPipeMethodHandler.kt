@@ -1,4 +1,4 @@
-package com.fazilvk.fluxtube.newpipe
+package lol.alphaliu01.gastube.newpipe
 
 import android.os.Handler
 import android.os.Looper

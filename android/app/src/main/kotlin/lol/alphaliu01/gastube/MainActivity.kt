@@ -1,4 +1,4 @@
-package com.fazilvk.fluxtube
+package lol.alphaliu01.gastube
 
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
@@ -11,9 +11,9 @@ import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import com.fazilvk.fluxtube.newpipe.NewPipeMethodHandler
-import com.fazilvk.fluxtube.player.NewPipeExoPlayerViewFactory
-import com.fazilvk.fluxtube.player.CastMethodHandler
+import lol.alphaliu01.gastube.newpipe.NewPipeMethodHandler
+import lol.alphaliu01.gastube.player.NewPipeExoPlayerViewFactory
+import lol.alphaliu01.gastube.player.CastMethodHandler
 
 @UnstableApi
 class MainActivity: AudioServiceFragmentActivity() {

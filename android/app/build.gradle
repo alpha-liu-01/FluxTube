@@ -45,7 +45,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 }
 
 android {
-    namespace "com.fazilvk.fluxtube"
+    namespace "lol.alphaliu01.gastube"
     compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -65,7 +65,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.fazilvk.fluxtube"
+        applicationId "lol.alphaliu01.gastube"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion flutter.minSdkVersion

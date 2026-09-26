@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluxtube/application/application.dart';
@@ -360,21 +361,32 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
                                   watchInfo: watchInfo,
                                   wide: split,
                                 );
-                                final page = NotificationListener<ScrollNotification>(
-                                  onNotification: (notification) {
-                                    _SlideDownDismiss.maybeOf(context)
-                                        ?.handle(notification);
-                                    return false;
-                                  },
-                                  child: SingleChildScrollView(
-                                    controller: _watchScroll,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        player,
-                                        details,
-                                      ],
+                                final scrollBehavior =
+                                    ScrollConfiguration.of(context);
+                                final page = ScrollConfiguration(
+                                  behavior: scrollBehavior.copyWith(
+                                    dragDevices: {
+                                      ...scrollBehavior.dragDevices,
+                                      PointerDeviceKind.mouse,
+                                    },
+                                  ),
+                                  child:
+                                      NotificationListener<ScrollNotification>(
+                                    onNotification: (notification) {
+                                      _SlideDownDismiss.maybeOf(context)
+                                          ?.handle(notification);
+                                      return false;
+                                    },
+                                    child: SingleChildScrollView(
+                                      controller: _watchScroll,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          player,
+                                          details,
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 );
@@ -753,11 +765,13 @@ class _SlideDownDismissState extends State<_SlideDownDismiss>
     final dismiss =
         !cancelled && height > 0 && _offset.value / height > _dismissFraction;
     if (dismiss && widget.onDismissed()) return;
-    _offset.animateTo(
+    _offset
+        .animateTo(
       0,
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
-    ).whenComplete(() {
+    )
+        .whenComplete(() {
       if (!mounted) return;
       _settling = false;
     });

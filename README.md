@@ -55,21 +55,15 @@ Some features are only available when using the NewPipe Extractor service.
 
 ## Download
 
-FluxTube's Android releases stay with the original project:
+
 
 <p>
   <a href="https://github.com/alpha-liu-01/GasTube/releases">
-    <img alt="FluxTube on GitHub" src="doc/get-it-on-gb.png" width="200">
+    <img alt="GasTube on GitHub" src="doc/get-it-on-gb.png" width="200">
   </a>
 </p>
 
-<p>
-  <a href="https://apt.izzysoft.de/packages/com.fazilvk.fluxtube">
-    <img alt="FluxTube on IzzyOnDroid" src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" width="200">
-  </a>
-</p>
 
-Those links install FluxTube (`com.fazilvk.fluxtube`), not GasTube. GasTube source for this fork is [alpha-liu-01/FluxTube](https://github.com/alpha-liu-01/FluxTube).
 
 ## NewPipe, FluxTube, and GasTube
 

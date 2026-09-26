@@ -828,6 +828,11 @@ class _WatchSlidePhysics extends ScrollPhysics {
     );
   }
 
+  /// A maximized window can fit the column, and the default physics then
+  /// refuse the drag. The downward overscroll is what starts the slide.
+  @override
+  bool shouldAcceptUserOffset(ScrollMetrics position) => true;
+
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
     if (blockUpwardScroll() && value > position.pixels) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Wrap build/linux/x64/release/bundle as a deb, rpm, or Arch package
 # for the distro this script is running on. Adds a desktop file and the
-# hicolor icons so a desktop shell can launch FluxTube.
+# hicolor icons so a desktop shell can launch GasTube.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -85,10 +85,10 @@ case "${family}" in
 Package: fluxtube
 Version: ${version}
 Architecture: $(dpkg --print-architecture)
-Maintainer: FluxTube
+Maintainer: GasTube
 Depends: libgtk-3-0, libmpv2 | libmpv1
 Description: Watch videos
- FluxTube desktop build with a bundled Java runtime and ffmpeg.
+ GasTube desktop build with a bundled Java runtime and ffmpeg.
 EOF
     deb="${root}/dist/fluxtube_${version}_$(dpkg --print-architecture).deb"
     dpkg-deb --root-owner-group --build "${workdir}/deb" "${deb}"
@@ -111,7 +111,7 @@ BuildArch: ${pkg_arch}
 Requires: gtk3, mpv-libs
 
 %description
-FluxTube desktop build with a bundled Java runtime and ffmpeg.
+GasTube desktop build with a bundled Java runtime and ffmpeg.
 
 %install
 mkdir -p %{buildroot}

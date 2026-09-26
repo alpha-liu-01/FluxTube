@@ -2,7 +2,7 @@ import 'model/app_info_model.dart';
 
 class AppInfo {
   static final myApp = AppInfoModel(
-    name: 'FluxTube',
+    name: 'GasTube',
     nickname: 'fluxtube',
     url: 'https://github.com/mu-fazil-vk/fluxtube',
     description: 'Watch and download videos without ads',

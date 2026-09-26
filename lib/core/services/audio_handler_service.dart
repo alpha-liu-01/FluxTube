@@ -464,7 +464,7 @@ Future<FluxTubeAudioHandler?> initAudioService() async {
       builder: () => FluxTubeAudioHandler(),
       config: AudioServiceConfig(
         androidNotificationChannelId: 'com.fazilvk.fluxtube.audio',
-        androidNotificationChannelName: 'FluxTube Playback',
+        androidNotificationChannelName: 'GasTube Playback',
         androidNotificationChannelDescription: 'Media playback controls',
         androidNotificationOngoing: false,
         androidStopForegroundOnPause:

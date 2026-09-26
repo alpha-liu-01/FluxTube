@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../application/search/search_bloc.dart';
+import '../../../core/app_info.dart';
 import '../../../core/colors.dart';
 import '../../../core/constants.dart';
 import '../../../core/di/injectable.dart';
@@ -32,9 +33,9 @@ class HomeAppBar extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ).createShader(bounds),
-          child: const Text(
-            'FluxTube',
-            style: TextStyle(
+          child: Text(
+            AppInfo.myApp.name,
+            style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 24,
               letterSpacing: -0.5,

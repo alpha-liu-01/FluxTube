@@ -14,9 +14,9 @@
 
 [Setup]
 AppId={{8C4E2A71-6B19-4F0D-9C55-2E7A1D4B8F30}
-AppName=FluxTube
+AppName=GasTube
 AppVersion={#AppVersion}
-AppPublisher=FluxTube
+AppPublisher=GasTube
 DefaultDirName={localappdata}\Programs\FluxTube
 PrivilegesRequired=lowest
 ArchitecturesAllowed={#SetupArch}
@@ -38,4 +38,4 @@ Source: "build\windows\{#SetupArch}\runner\Release\*"; DestDir: "{app}"; Flags: 
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\FluxTube"; Filename: "{app}\fluxtube.exe"
+Name: "{autoprograms}\GasTube"; Filename: "{app}\fluxtube.exe"

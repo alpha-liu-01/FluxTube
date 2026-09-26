@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "fluxtube" "\0"
+            VALUE "FileDescription", "GasTube" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "fluxtube" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "fluxtube.exe" "\0"
-            VALUE "ProductName", "fluxtube" "\0"
+            VALUE "ProductName", "GasTube" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

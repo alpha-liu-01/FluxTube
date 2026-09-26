@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=GasTube
+Comment=Ad-free YouTube client
+Exec=gastube
+Icon=lol.alphaliu01.gastube
+Categories=AudioVideo;Video;Player;
+StartupNotify=true
+Terminal=false

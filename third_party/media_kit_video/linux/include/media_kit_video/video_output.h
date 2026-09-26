@@ -93,6 +93,12 @@ mpv_render_context* video_output_get_render_context(VideoOutput* self);
 // Flutter calls FlTextureGL.populate with Impeller's context current.
 gboolean video_output_ensure_render_context(VideoOutput* self);
 
+// Bumped after the video output is moved onto Flutter's GL context.
+// Impeller keeps the first texture name it imported, and that draw is empty.
+gint video_output_texture_epoch(VideoOutput* self);
+
+void video_output_request_frame(VideoOutput* self);
+
 GdkGLContext* video_output_get_gdk_gl_context(VideoOutput* self);
 
 guint8* video_output_get_pixel_buffer(VideoOutput* self);

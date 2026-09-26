@@ -89,6 +89,18 @@ set_target_properties(${BINARY_NAME}
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# Flatpak builds have no network. The media_kit Linux plugin otherwise
+# downloads mimalloc during configure. The manifest fetches that tarball
+# and points GASTUBE_MIMALLOC_ARCHIVE at it.
+if(DEFINED ENV{GASTUBE_MIMALLOC_ARCHIVE})
+  file(COPY "$ENV{GASTUBE_MIMALLOC_ARCHIVE}"
+    DESTINATION "${CMAKE_BINARY_DIR}"
+  )
+endif()
+# sqlite3_flutter_libs fetches the amalgamation at configure time.
+if(DEFINED ENV{GASTUBE_SQLITE_SRC})
+  set(FETCHCONTENT_SOURCE_DIR_SQLITE3 "$ENV{GASTUBE_SQLITE_SRC}")
+endif()
 include(flutter/generated_plugins.cmake)
 
 

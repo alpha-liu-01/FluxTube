@@ -17,6 +17,7 @@ struct _TextureGL {
   guint32 current_width;
   guint32 current_height;
   gboolean populating;
+  gint seen_epoch;
   VideoOutput* video_output;
 };
 
@@ -28,6 +29,7 @@ static void texture_gl_init(TextureGL* self) {
   self->current_width = 1;
   self->current_height = 1;
   self->populating = FALSE;
+  self->seen_epoch = 0;
   self->video_output = NULL;
 }
 
@@ -89,11 +91,23 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
   }
   gint32 required_width = (guint32)video_output_get_width(video_output);
   gint32 required_height = (guint32)video_output_get_height(video_output);
+  gboolean need_another = FALSE;
   if (required_width > 0 && required_height > 0) {
     // Bind mpv to Flutter's GLES context before allocating the texture.
     if (!video_output_ensure_render_context(video_output)) {
       self->populating = FALSE;
       return FALSE;
+    }
+    // The first texture name is imported while the draw is still empty.
+    // Impeller keeps it. After the VO is moved onto this context, allocate
+    // a new name so that import contains the picture.
+    gint epoch = video_output_texture_epoch(video_output);
+    if (epoch != self->seen_epoch && self->name != 0) {
+      glDeleteTextures(1, &self->name);
+      glDeleteFramebuffers(1, &self->fbo);
+      self->name = 0;
+      self->fbo = 0;
+      g_print("media_kit: TextureGL: new texture after video output rebind\n");
     }
     gboolean first_frame = self->name == 0 || self->fbo == 0;
     if (first_frame) {
@@ -129,6 +143,24 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
       glBindTexture(GL_TEXTURE_2D, self->name);
       glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
     }
+    // Check while our FBO is bound. mpv unbinds it, and the default
+    // framebuffer on Flutter's surfaceless GLES context is undefined
+    // (0x8219), which is not a failed texture.
+    GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
+      g_print(
+          "media_kit: TextureGL: framebuffer 0x%x, reallocating as RGBA8\n",
+          fb_status);
+      glBindTexture(GL_TEXTURE_2D, self->name);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, required_width, required_height,
+                   0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+      glBindFramebuffer(GL_FRAMEBUFFER, self->fbo);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                             GL_TEXTURE_2D, self->name, 0);
+      fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+      g_print("media_kit: TextureGL: framebuffer after RGBA8: 0x%x\n",
+              fb_status);
+    }
     mpv_render_context* render_context =
         video_output_get_render_context(video_output);
     mpv_opengl_fbo fbo{(gint32)self->fbo, required_width, required_height, 0};
@@ -137,18 +169,16 @@ gboolean texture_gl_populate_texture(FlTextureGL* texture,
         {MPV_RENDER_PARAM_INVALID, NULL},
     };
     mpv_render_context_render(render_context, params);
-    GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    static gboolean logged_fb_status = FALSE;
-    if (!logged_fb_status && fb_status != GL_FRAMEBUFFER_COMPLETE) {
-      logged_fb_status = TRUE;
-      g_print("media_kit: TextureGL: framebuffer incomplete: 0x%x\n",
-              fb_status);
-    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    self->seen_epoch = epoch;
+    need_another = video_output_texture_epoch(video_output) != epoch;
     glBindTexture(GL_TEXTURE_2D, 0);
     glFlush();
   }
   self->populating = FALSE;
+  if (need_another) {
+    video_output_request_frame(video_output);
+  }
   *target = GL_TEXTURE_2D;
   *name = self->name;
   *width = self->current_width;

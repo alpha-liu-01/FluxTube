@@ -1,0 +1,1234 @@
+# From-source Flatpak for GasTube. The app checkout below is a local
+# directory so this tree can be built before it is published. A Flathub
+# submission replaces that source with a git url and commit.
+id: lol.alphaliu01.gastube
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk17
+command: gastube
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-download:create
+  - --filesystem=xdg-videos:create
+  - --env=PATH=/app/jre/bin:/app/bin:/usr/bin
+  - --env=JAVA_HOME=/app/jre
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+  - '*.la'
+modules:
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk17/bin/jlink --module-path /usr/lib/sdk/openjdk17/jvm/openjdk-17/jmods --add-modules ALL-MODULE-PATH --output /app/jre --strip-debug --no-man-pages --no-header-files
+
+  - name: ffmpeg
+    buildsystem: simple
+    # YouTube playback URLs are https. Without a TLS library, this ffmpeg
+    # builds the http protocol and not https. libmpv then fails every open,
+    # and the player stays at 0:00 on a black frame. Changing quality does
+    # not help, because every stream URL is still https. GnuTLS is already
+    # in the Freedesktop runtime, so the app does not have to ship it.
+    build-commands:
+      - ./configure --prefix=/app --enable-shared --disable-static --disable-doc --disable-ffplay --enable-gpl --enable-version3 --enable-pic --enable-gnutls --disable-nvenc --disable-nvdec --disable-cuda --disable-cuvid --disable-ffnvcodec --disable-vulkan
+      - make -j$(nproc)
+      - make install
+    sources:
+      - type: archive
+        url: https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.xz
+        sha256: 8684f4b00f94b85461884c3719382f1261f0d9eb3d59640a1f4ac0873616f968
+
+  - name: libass
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://github.com/libass/libass/releases/download/0.17.3/libass-0.17.3.tar.xz
+        sha256: eae425da50f0015c21f7b3a9c7262a910f0218af469e22e2931462fed3c50959
+
+  - name: mpv
+    buildsystem: meson
+    build-options:
+      ldflags: -Wl,-rpath,/app/lib
+    # A debug build leaves mpv's allocator canaries enabled. mpv_create then
+    # aborts in ta_dbg_check_header before the player can start.
+    config-opts:
+      - -Dbuildtype=release
+      - -Db_ndebug=true
+      - -Dlibmpv=true
+      - -Dcplayer=false
+      - -Dlibplacebo=disabled
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dlibarchive=disabled
+      - -Ddvdnav=disabled
+      - -Dcdda=disabled
+      - -Dsdl2=disabled
+      - -Dopenal=disabled
+      - -Djack=disabled
+      - -Dvulkan=disabled
+      - -Dshaderc=disabled
+      - -Dmanpage-build=disabled
+      - -Dbuild-date=false
+    sources:
+      - type: archive
+        url: https://github.com/mpv-player/mpv/archive/refs/tags/v0.35.1.tar.gz
+        sha256: 41df981b7b84e33a2ef4478aaf81d6f4f5c8b9cd2c0d337ac142fc20b387d1a9
+      # GCC 16 zeroes only the first byte of `union x val = {0}` when the
+      # first member is a bool. mpv then frees a garbage pointer in mpv_create.
+      - type: patch
+        path: mpv-gcc16-union-init.patch
+
+  - name: sidecar
+    buildsystem: simple
+    build-commands:
+      - bash -c 'export PATH="/app/jre/bin:$PATH"; bash build-sidecar.sh jars src /app/bin/newpipe-spike.jar'
+    sources:
+      - type: dir
+        path: ../newpipe-spike/src
+        dest: src
+      - type: file
+        path: build-sidecar.sh
+      - type: file
+        dest: jars
+        dest-filename: kotlin-compiler-embeddable-2.1.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.1.10/kotlin-compiler-embeddable-2.1.10.jar
+        sha256: 396f28856f0fd704320819398d5959a781bdf225b2dc2ac02cd5248442ebd5b8
+      - type: file
+        dest: jars
+        dest-filename: kotlinx-coroutines-core-jvm-1.6.4.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.6.4/kotlinx-coroutines-core-jvm-1.6.4.jar
+        sha256: c24c8bb27bb320c4a93871501a7e5e0c61607638907b197aef675513d4c820be
+      - type: file
+        dest: jars
+        dest-filename: trove4j-1.0.20200330.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar
+        sha256: c5fd725bffab51846bf3c77db1383c60aaaebfe1b7fe2f00d23fe1b7df0a439d
+      - type: file
+        dest: jars
+        dest-filename: kotlin-script-runtime-2.1.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-script-runtime/2.1.10/kotlin-script-runtime-2.1.10.jar
+        sha256: e244c0e7f664111755f2e6e977861b71a6eba3b4f45162704833e46dfa883ae8
+      - type: file
+        dest: jars
+        dest-filename: kotlin-reflect-1.6.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-reflect/1.6.10/kotlin-reflect-1.6.10.jar
+        sha256: 3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203
+      - type: file
+        dest: jars
+        dest-filename: kotlin-daemon-embeddable-2.1.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.1.10/kotlin-daemon-embeddable-2.1.10.jar
+        sha256: 7efa3fa5b706eb1bdbcdaa476164519b9f09c2dc1680019435348d39ce24be1d
+      - type: file
+        dest: jars
+        dest-filename: kotlin-stdlib-2.1.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.1.10/kotlin-stdlib-2.1.10.jar
+        sha256: 5f2ac1ca8dc8b37a3f4314e716d36969ebf0227a75181d32699d0a8f645b1c21
+      - type: file
+        dest: jars
+        dest-filename: kotlin-stdlib-jdk8-1.9.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.9.10/kotlin-stdlib-jdk8-1.9.10.jar
+        sha256: a4c74d94d64ce1abe53760fe0389dd941f6fc558d0dab35e47c085a11ec80f28
+      - type: file
+        dest: jars
+        dest-filename: kotlin-stdlib-jdk7-1.9.10.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.9.10/kotlin-stdlib-jdk7-1.9.10.jar
+        sha256: ac6361bf9ad1ed382c2103d9712c47cdec166232b4903ed596e8876b0681c9b7
+      - type: file
+        dest: jars
+        dest-filename: annotations-13.0.jar
+        url: https://repo1.maven.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar
+        sha256: ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478
+      - type: file
+        dest: jars
+        dest-filename: newpipeextractor-v0.26.5.jar
+        url: https://jitpack.io/com/github/teamnewpipe/newpipeextractor/v0.26.5/newpipeextractor-v0.26.5.jar
+        sha256: 923bf0a60938d570ad176ed7b08fa9fec7d0772d7a386ca89a2dd3b9212979c7
+      - type: file
+        dest: jars
+        dest-filename: nanojson-e9d656ddb49a412a5a0a5d5ef20ca7ef09549996.jar
+        url: https://jitpack.io/com/github/TeamNewPipe/nanojson/e9d656ddb49a412a5a0a5d5ef20ca7ef09549996/nanojson-e9d656ddb49a412a5a0a5d5ef20ca7ef09549996.jar
+        sha256: d495881a322b3c72e5d43284afd7d7021520028ca8b7c6ba861e3fd8d90614d5
+      - type: file
+        dest: jars
+        dest-filename: jsoup-1.22.2.jar
+        url: https://repo1.maven.org/maven2/org/jsoup/jsoup/1.22.2/jsoup-1.22.2.jar
+        sha256: 596785996d3c6df16f544c232d10a9a1d88783b2a4740cf5251cb616f2be704d
+      - type: file
+        dest: jars
+        dest-filename: jsr305-3.0.2.jar
+        url: https://repo1.maven.org/maven2/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar
+        sha256: 766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7
+      - type: file
+        dest: jars
+        dest-filename: protobuf-javalite-4.35.1.jar
+        url: https://repo1.maven.org/maven2/com/google/protobuf/protobuf-javalite/4.35.1/protobuf-javalite-4.35.1.jar
+        sha256: 45d3769189888e491ab7d58125f2014c2a86fb8104c7aa3878c723943fce7a14
+      - type: file
+        dest: jars
+        dest-filename: rhino-1.8.1.jar
+        url: https://repo1.maven.org/maven2/org/mozilla/rhino/1.8.1/rhino-1.8.1.jar
+        sha256: 98a06d42bdd69da15bf9c2a7812b4cfe648ca9e64fe8baaeb502a32b0ed2c8ac
+      - type: file
+        dest: jars
+        dest-filename: rhino-engine-1.8.1.jar
+        url: https://repo1.maven.org/maven2/org/mozilla/rhino-engine/1.8.1/rhino-engine-1.8.1.jar
+        sha256: ff38ad60aa32a23942f60242a433a2583a5407841745510754a43e0e61dd95cf
+      - type: file
+        dest: jars
+        dest-filename: okhttp-4.12.0.jar
+        url: https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.12.0/okhttp-4.12.0.jar
+        sha256: b1050081b14bb7a3a7e55a4d3ef01b5dcfabc453b4573a4fc019767191d5f4e0
+      - type: file
+        dest: jars
+        dest-filename: okio-jvm-3.6.0.jar
+        url: https://repo1.maven.org/maven2/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.jar
+        sha256: 67543f0736fc422ae927ed0e504b98bc5e269fda0d3500579337cb713da28412
+      - type: file
+        dest: jars
+        dest-filename: gson-2.11.0.jar
+        url: https://repo1.maven.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar
+        sha256: 57928d6e5a6edeb2abd3770a8f95ba44dce45f3b23b7a9dc2b309c581552a78b
+      - type: file
+        dest: jars
+        dest-filename: error_prone_annotations-2.27.0.jar
+        url: https://repo1.maven.org/maven2/com/google/errorprone/error_prone_annotations/2.27.0/error_prone_annotations-2.27.0.jar
+        sha256: 24c923372c58e35d0b9f16a028929bb9aedc77521867c274f2bd0735df5ba1f5
+
+  - name: gastube
+    buildsystem: simple
+    build-options:
+      env:
+        PUB_CACHE: /run/build/gastube/pub-cache
+        FLUTTER_ROOT: /run/build/gastube/flutter-sdk
+        PATH: /run/build/gastube/flutter-sdk/bin:/app/jre/bin:/usr/bin
+        GASTUBE_MIMALLOC_ARCHIVE: /run/build/gastube/mimalloc-2.1.2.tar.gz
+        GASTUBE_SQLITE_SRC: /run/build/gastube/sqlite-src
+    build-commands:
+      - bash packaging/flatpak/build-app.sh
+      - cp -a build/linux/x64/release/bundle/. /app/bin/
+      - |
+        for size in 16 24 32 48 64 256; do
+          install -Dm644 packaging/linux/icons/${size}x${size}/apps/gastube.png /app/share/icons/hicolor/${size}x${size}/apps/lol.alphaliu01.gastube.png
+        done
+      - install -Dm644 packaging/flatpak/lol.alphaliu01.gastube.desktop /app/share/applications/lol.alphaliu01.gastube.desktop
+      - install -Dm644 packaging/flatpak/lol.alphaliu01.gastube.metainfo.xml /app/share/metainfo/lol.alphaliu01.gastube.metainfo.xml
+      - install -Dm644 LICENSE /app/share/licenses/lol.alphaliu01.gastube/LICENSE
+    sources:
+      - type: dir
+        path: ../..
+      - type: archive
+        dest: flutter-sdk
+        url: https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.47.1-stable.tar.xz
+        sha256: a1d8166c0309267cb7dc99f1424eecf08b86946ad3b50723c6f59945964aea45
+      - type: file
+        url: https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz
+        sha256: 2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb
+        dest-filename: mimalloc-2.1.2.tar.gz
+      - type: archive
+        dest: sqlite-src
+        url: https://sqlite.org/2026/sqlite-autoconf-3520000.tar.gz
+        sha256: f6b50b0c103392af32a8be15b2b9d25959de9a00a70c3979128aafeaa5338b3f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/_fe_analyzer_shared-85.0.0
+        url: https://pub.dev/api/archives/_fe_analyzer_shared-85.0.0.tar.gz
+        sha256: da0d9209ca76bde579f2da330aeb9df62b6319c834fa7baae052021b0462401f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/analyzer-7.7.1
+        url: https://pub.dev/api/archives/analyzer-7.7.1.tar.gz
+        sha256: 974859dc0ff5f37bc4313244b3218c791810d03ab3470a579580279ba971a48d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/app_links-6.4.1
+        url: https://pub.dev/api/archives/app_links-6.4.1.tar.gz
+        sha256: 5f88447519add627fe1cbcab4fd1da3d4fed15b9baf29f28b22535c95ecee3e8
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/app_links_linux-1.0.3
+        url: https://pub.dev/api/archives/app_links_linux-1.0.3.tar.gz
+        sha256: f5f7173a78609f3dfd4c2ff2c95bd559ab43c80a87dc6a095921d96c05688c81
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/app_links_platform_interface-2.0.4
+        url: https://pub.dev/api/archives/app_links_platform_interface-2.0.4.tar.gz
+        sha256: 7546f09a6e93f4a2df2fe2bd40a5c6c64310ac461b036d82b43033be7a59f809
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/app_links_web-1.0.4
+        url: https://pub.dev/api/archives/app_links_web-1.0.4.tar.gz
+        sha256: af060ed76183f9e2b87510a9480e56a5352b6c249778d07bd2c95fc35632a555
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/archive-4.1.0
+        url: https://pub.dev/api/archives/archive-4.1.0.tar.gz
+        sha256: be169cf6ac481e052c4538715d88841d567150dfe1df38aaec76461a4e7b39f2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/args-2.7.0
+        url: https://pub.dev/api/archives/args-2.7.0.tar.gz
+        sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/async-2.13.1
+        url: https://pub.dev/api/archives/async-2.13.1.tar.gz
+        sha256: e2eb0491ba5ddb6177742d2da23904574082139b07c1e33b8503b9f46f3e1a37
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/audio_service-0.18.19
+        url: https://pub.dev/api/archives/audio_service-0.18.19.tar.gz
+        sha256: 95f3267f3449eb5cf71c8fcf1d556f57af1e898e2dc5815fb168d1843653edb7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3
+        url: https://pub.dev/api/archives/audio_service_platform_interface-0.1.3.tar.gz
+        sha256: 6283782851f6c8b501b60904a32fc7199dc631172da0629d7301e66f672ab777
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/audio_service_web-0.1.4
+        url: https://pub.dev/api/archives/audio_service_web-0.1.4.tar.gz
+        sha256: b8ea9243201ee53383157fbccf13d5d2a866b5dda922ec19d866d1d5d70424df
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/audio_session-0.2.4
+        url: https://pub.dev/api/archives/audio_session-0.2.4.tar.gz
+        sha256: f9e7711a0e24ca8b40f5d7ac374c3c6e55016f3157912badd18199cdbbca5c4d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/awesome_bottom_bar-1.2.4
+        url: https://pub.dev/api/archives/awesome_bottom_bar-1.2.4.tar.gz
+        sha256: dd42e6767ae22cf5eb47695991e7a3f964ccba3b403a93837c20eb4f74e4ad0f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/bloc-9.2.1
+        url: https://pub.dev/api/archives/bloc-9.2.1.tar.gz
+        sha256: e03b235924e4f509c27b5d6b2f949200e0a91149a9818b4f65eeb56662b75413
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/boolean_selector-2.1.2
+        url: https://pub.dev/api/archives/boolean_selector-2.1.2.tar.gz
+        sha256: 8aab1771e1243a5063b8b0ff68042d67334e3feab9e95b9490f9a6ebf73b42ea
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build-2.5.4
+        url: https://pub.dev/api/archives/build-2.5.4.tar.gz
+        sha256: 51dc711996cbf609b90cbe5b335bbce83143875a9d58e4b5c6d3c4f684d3dda7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build_config-1.1.2
+        url: https://pub.dev/api/archives/build_config-1.1.2.tar.gz
+        sha256: 4ae2de3e1e67ea270081eaee972e1bd8f027d459f249e0f1186730784c2e7e33
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build_daemon-4.1.5
+        url: https://pub.dev/api/archives/build_daemon-4.1.5.tar.gz
+        sha256: 79e05eaf15a48d7230b053a4363b8eaac0cc234bbd0134c3229455481f55cbc6
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build_resolvers-2.5.4
+        url: https://pub.dev/api/archives/build_resolvers-2.5.4.tar.gz
+        sha256: ee4257b3f20c0c90e72ed2b57ad637f694ccba48839a821e87db762548c22a62
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build_runner-2.5.4
+        url: https://pub.dev/api/archives/build_runner-2.5.4.tar.gz
+        sha256: 382a4d649addbfb7ba71a3631df0ec6a45d5ab9b098638144faf27f02778eb53
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/build_runner_core-9.1.2
+        url: https://pub.dev/api/archives/build_runner_core-9.1.2.tar.gz
+        sha256: 85fbbb1036d576d966332a3f5ce83f2ce66a40bea1a94ad2d5fc29a19a0d3792
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/built_collection-5.1.1
+        url: https://pub.dev/api/archives/built_collection-5.1.1.tar.gz
+        sha256: 376e3dd27b51ea877c28d525560790aee2e6fbb5f20e2f85d5081027d94e2100
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/built_value-8.12.7
+        url: https://pub.dev/api/archives/built_value-8.12.7.tar.gz
+        sha256: 31b24be6615ec7fcf70b3aa5a7469fe35826485e639a16dd7eb83ba30e4cc6a8
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cached_network_image-3.4.1
+        url: https://pub.dev/api/archives/cached_network_image-3.4.1.tar.gz
+        sha256: 7c1183e361e5c8b0a0f21a28401eecdbde252441106a9816400dd4c2b2424916
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cached_network_image_platform_interface-4.1.1
+        url: https://pub.dev/api/archives/cached_network_image_platform_interface-4.1.1.tar.gz
+        sha256: 35814b016e37fbdc91f7ae18c8caf49ba5c88501813f73ce8a07027a395e2829
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cached_network_image_web-1.3.1
+        url: https://pub.dev/api/archives/cached_network_image_web-1.3.1.tar.gz
+        sha256: 980842f4e8e2535b8dbd3d5ca0b1f0ba66bf61d14cc3a17a9b4788a3685ba062
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/characters-1.4.1
+        url: https://pub.dev/api/archives/characters-1.4.1.tar.gz
+        sha256: faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/charcode-1.4.0
+        url: https://pub.dev/api/archives/charcode-1.4.0.tar.gz
+        sha256: fb0f1107cac15a5ea6ef0a6ef71a807b9e4267c713bb93e00e92d737cc8dbd8a
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/checked_yaml-2.0.4
+        url: https://pub.dev/api/archives/checked_yaml-2.0.4.tar.gz
+        sha256: 959525d3162f249993882720d52b7e0c833978df229be20702b33d48d91de70f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cli_util-0.4.2
+        url: https://pub.dev/api/archives/cli_util-0.4.2.tar.gz
+        sha256: ff6785f7e9e3c38ac98b2fb035701789de90154024a75b6cb926445e83197d1c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/clock-1.1.2
+        url: https://pub.dev/api/archives/clock-1.1.2.tar.gz
+        sha256: fddb70d9b5277016c77a80201021d40a2247104d9f4aa7bab7157b7e3f05b84b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/code_assets-2.0.0
+        url: https://pub.dev/api/archives/code_assets-2.0.0.tar.gz
+        sha256: cfd4f5f575a49c5f10ca856e9846073f1e6c3ee94912377eea5f6cefc5272941
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/code_builder-4.11.1
+        url: https://pub.dev/api/archives/code_builder-4.11.1.tar.gz
+        sha256: 6a6cab2ba4680d6423f34a9b972a4c9a94ebe1b62ecec4e1a1f2cba91fd1319d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/collection-1.19.1
+        url: https://pub.dev/api/archives/collection-1.19.1.tar.gz
+        sha256: 2f5709ae4d3d59dd8f7cd309b4e023046b57d8a6c82130785d2b0e5868084e76
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/convert-3.1.2
+        url: https://pub.dev/api/archives/convert-3.1.2.tar.gz
+        sha256: b30acd5944035672bc15c6b7a8b47d773e41e2f17de064350988c5d02adb1c68
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cross_file-0.3.5+4
+        url: https://pub.dev/api/archives/cross_file-0.3.5%2B4.tar.gz
+        sha256: 92c9c43c383bfa1c32079d3bc492d55d6d4318044b7b47edaff8971cbb555c51
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/crypto-3.0.7
+        url: https://pub.dev/api/archives/crypto-3.0.7.tar.gz
+        sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/csslib-1.0.2
+        url: https://pub.dev/api/archives/csslib-1.0.2.tar.gz
+        sha256: 09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/cupertino_icons-1.0.9
+        url: https://pub.dev/api/archives/cupertino_icons-1.0.9.tar.gz
+        sha256: 41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dart_style-3.1.1
+        url: https://pub.dev/api/archives/dart_style-3.1.1.tar.gz
+        sha256: 8a0e5fba27e8ee025d2ffb4ee820b4e6e2cf5e4246a6b1a477eb66866947e0bb
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dartz-0.10.1
+        url: https://pub.dev/api/archives/dartz-0.10.1.tar.gz
+        sha256: e6acf34ad2e31b1eb00948692468c30ab48ac8250e0f0df661e29f12dd252168
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dbus-0.7.15
+        url: https://pub.dev/api/archives/dbus-0.7.15.tar.gz
+        sha256: a48d5da28e89bd02196e80d81ed8d7954923d00a0f4a68cc20b575038f023383
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dio-5.11.0
+        url: https://pub.dev/api/archives/dio-5.11.0.tar.gz
+        sha256: 0df44ebba85e503958eb75d07eedd3c86275a58c1d3eda2f2ce8f0a2c3abbb3c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dio_web_adapter-2.2.1
+        url: https://pub.dev/api/archives/dio_web_adapter-2.2.1.tar.gz
+        sha256: 0786d0b7295a373de356fc0af4f6f1d0ab2844ed31b19dfc5e7556b70e24212c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dismissible_page-1.0.2
+        url: https://pub.dev/api/archives/dismissible_page-1.0.2.tar.gz
+        sha256: 5b2316f770fe83583f770df1f6505cb19102081c5971979806e77f2e507a9958
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/drift-2.28.2
+        url: https://pub.dev/api/archives/drift-2.28.2.tar.gz
+        sha256: 540cf382a3bfa99b76e51514db5b0ebcd81ce3679b7c1c9cb9478ff3735e47a1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/drift_dev-2.28.0
+        url: https://pub.dev/api/archives/drift_dev-2.28.0.tar.gz
+        sha256: 68c138e884527d2bd61df2ade276c3a144df84d1adeb0ab8f3196b5afe021bd4
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/drift_flutter-0.2.7
+        url: https://pub.dev/api/archives/drift_flutter-0.2.7.tar.gz
+        sha256: b7534bf320aac5213259aac120670ba67b63a1fd010505babc436ff86083818f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/dynamic_color-1.9.0
+        url: https://pub.dev/api/archives/dynamic_color-1.9.0.tar.gz
+        sha256: 4aeb76de323e8eb660bab5557d826ad7ebbf1434a598f0c6aa8a11a9696a6757
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/easy_debounce-2.0.3
+        url: https://pub.dev/api/archives/easy_debounce-2.0.3.tar.gz
+        sha256: f082609cfb8f37defb9e37fc28bc978c6712dedf08d4c5a26f820fa10165a236
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/fake_async-1.3.3
+        url: https://pub.dev/api/archives/fake_async-1.3.3.tar.gz
+        sha256: 5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/ffi-2.2.0
+        url: https://pub.dev/api/archives/ffi-2.2.0.tar.gz
+        sha256: 6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/file-7.0.1
+        url: https://pub.dev/api/archives/file-7.0.1.tar.gz
+        sha256: a3b4f84adafef897088c160faf7dfffb7696046cb13ae90b508c2cbc95d3b8d4
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/file_picker-8.3.7
+        url: https://pub.dev/api/archives/file_picker-8.3.7.tar.gz
+        sha256: ab13ae8ef5580a411c458d6207b6774a6c237d77ac37011b13994879f68a8810
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/fixnum-1.1.1
+        url: https://pub.dev/api/archives/fixnum-1.1.1.tar.gz
+        sha256: b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_bloc-9.1.1
+        url: https://pub.dev/api/archives/flutter_bloc-9.1.1.tar.gz
+        sha256: cf51747952201a455a1c840f8171d273be009b932c75093020f9af64f2123e38
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_cache_manager-3.4.2
+        url: https://pub.dev/api/archives/flutter_cache_manager-3.4.2.tar.gz
+        sha256: 1de7849213b4c73c85aca7e0ac687a9a5d82ccdb594366b9dcc26cb6a2189cd2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_launcher_icons-0.14.4
+        url: https://pub.dev/api/archives/flutter_launcher_icons-0.14.4.tar.gz
+        sha256: 10f13781741a2e3972126fae08393d3c4e01fa4cd7473326b94b72cf594195e7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_lints-6.0.0
+        url: https://pub.dev/api/archives/flutter_lints-6.0.0.tar.gz
+        sha256: 3105dc8492f6183fb076ccf1f351ac3d60564bff92e20bfc4af9cc1651f4e7e1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_local_notifications-18.0.1
+        url: https://pub.dev/api/archives/flutter_local_notifications-18.0.1.tar.gz
+        sha256: ef41ae901e7529e52934feba19ed82827b11baa67336829564aeab3129460610
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_local_notifications_linux-5.0.0
+        url: https://pub.dev/api/archives/flutter_local_notifications_linux-5.0.0.tar.gz
+        sha256: 8f685642876742c941b29c32030f6f4f6dacd0e4eaecb3efbb187d6a3812ca01
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_local_notifications_platform_interface-8.0.0
+        url: https://pub.dev/api/archives/flutter_local_notifications_platform_interface-8.0.0.tar.gz
+        sha256: 6c5b83c86bf819cdb177a9247a3722067dd8cc6313827ce7c77a4b238a26fd52
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.35
+        url: https://pub.dev/api/archives/flutter_plugin_android_lifecycle-2.0.35.tar.gz
+        sha256: 3854fe5e3bff0b113c658f260b90c95dea17c92db0f2addeac2e343dd9969785
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/flutter_svg-2.3.0
+        url: https://pub.dev/api/archives/flutter_svg-2.3.0.tar.gz
+        sha256: 35882981abcbfb8c15b286f0cd690ff25bac12d95eff3e25ee207f37d4c42e7f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/fluttertoast-9.1.0
+        url: https://pub.dev/api/archives/fluttertoast-9.1.0.tar.gz
+        sha256: 7903c9d5339173497bfecbc23bc4212f5a87e0edfac2e1693fb74465ea67da7e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/freezed-2.5.8
+        url: https://pub.dev/api/archives/freezed-2.5.8.tar.gz
+        sha256: 59a584c24b3acdc5250bb856d0d3e9c0b798ed14a4af1ddb7dc1c7b41df91c9c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/freezed_annotation-2.4.4
+        url: https://pub.dev/api/archives/freezed_annotation-2.4.4.tar.gz
+        sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/frontend_server_client-4.0.0
+        url: https://pub.dev/api/archives/frontend_server_client-4.0.0.tar.gz
+        sha256: f64a0333a82f30b0cca061bc3d143813a486dc086b574bfb233b7c1372427694
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/get_it-9.2.1
+        url: https://pub.dev/api/archives/get_it-9.2.1.tar.gz
+        sha256: 568d62f0e68666fb5d95519743b3c24a34c7f19d834b0658c46e26d778461f66
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/glob-2.1.3
+        url: https://pub.dev/api/archives/glob-2.1.3.tar.gz
+        sha256: c3f1ee72c96f8f78935e18aa8cecced9ab132419e8625dc187e1c2408efc20de
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/go_router-17.5.0
+        url: https://pub.dev/api/archives/go_router-17.5.0.tar.gz
+        sha256: d7a3576cb312649eaa51f2356450aed686085fb58fcdebda5b359aa951eef7ea
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/graphs-2.3.2
+        url: https://pub.dev/api/archives/graphs-2.3.2.tar.gz
+        sha256: 741bbf84165310a68ff28fe9e727332eef1407342fca52759cb21ad8177bb8d0
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/gtk-2.2.0
+        url: https://pub.dev/api/archives/gtk-2.2.0.tar.gz
+        sha256: 4ff85b2a16724029dd9e5bbb5a94b6918f9973f74ba571c949d2002801879cf5
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/hooks-2.2.0
+        url: https://pub.dev/api/archives/hooks-2.2.0.tar.gz
+        sha256: eaac480a35ec0814146c2c48d96aaa829e0e44a7662c88ae84c9edf4bc35651f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/html-0.15.6
+        url: https://pub.dev/api/archives/html-0.15.6.tar.gz
+        sha256: 6d1264f2dffa1b1101c25a91dff0dc2daee4c18e87cd8538729773c073dbf602
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/http-1.6.0
+        url: https://pub.dev/api/archives/http-1.6.0.tar.gz
+        sha256: 87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/http_multi_server-3.2.2
+        url: https://pub.dev/api/archives/http_multi_server-3.2.2.tar.gz
+        sha256: aa6199f908078bb1c5efb8d8638d4ae191aac11b311132c3ef48ce352fb52ef8
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/http_parser-4.1.2
+        url: https://pub.dev/api/archives/http_parser-4.1.2.tar.gz
+        sha256: 178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/image-4.9.2
+        url: https://pub.dev/api/archives/image-4.9.2.tar.gz
+        sha256: 1976370a4df3091bb0f72409c187ad1f9132a818bc6b95ca59c0bae1c75c688e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/injectable-2.7.1+4
+        url: https://pub.dev/api/archives/injectable-2.7.1%2B4.tar.gz
+        sha256: 32b36a9d87f18662bee0b1951b81f47a01f2bf28cd6ea94f60bc5453c7bf598c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/injectable_generator-2.7.0
+        url: https://pub.dev/api/archives/injectable_generator-2.7.0.tar.gz
+        sha256: b04673a4c88b3a848c0c77bf58b8309f9b9e064d9fe1df5450c8ee1675eaea1a
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/intl-0.20.3
+        url: https://pub.dev/api/archives/intl-0.20.3.tar.gz
+        sha256: 1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/intl_utils-2.8.11
+        url: https://pub.dev/api/archives/intl_utils-2.8.11.tar.gz
+        sha256: da67ac187b521445d745f7c68e7254c2090f6c3c9081c93cd515480af9e59569
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/io-1.0.5
+        url: https://pub.dev/api/archives/io-1.0.5.tar.gz
+        sha256: dfd5a80599cf0165756e3181807ed3e77daf6dd4137caaad72d0b7931597650b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/jni-1.0.3
+        url: https://pub.dev/api/archives/jni-1.0.3.tar.gz
+        sha256: f038e58b4dc2c9037f50e233175086337e0b305e356d28211bf55f21c504cbd3
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/jni_flutter-1.0.2
+        url: https://pub.dev/api/archives/jni_flutter-1.0.2.tar.gz
+        sha256: 7b717011ea40d04fd47c2731d3d1d36eb99eba3435c2753d62489e8c3c9991d5
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/jni_util-1.0.0
+        url: https://pub.dev/api/archives/jni_util-1.0.0.tar.gz
+        sha256: 1ba86da04a5f2bf18fde2edb235587e70c5b0fc5bd4ba955f46b00942c3fc35f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/js-0.7.2
+        url: https://pub.dev/api/archives/js-0.7.2.tar.gz
+        sha256: 53385261521cc4a0c4658fd0ad07a7d14591cf8fc33abbceae306ddb974888dc
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/json_annotation-4.9.0
+        url: https://pub.dev/api/archives/json_annotation-4.9.0.tar.gz
+        sha256: 1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/json_serializable-6.9.5
+        url: https://pub.dev/api/archives/json_serializable-6.9.5.tar.gz
+        sha256: c50ef5fc083d5b5e12eef489503ba3bf5ccc899e487d691584699b4bdefeea8c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/leak_tracker-11.0.2
+        url: https://pub.dev/api/archives/leak_tracker-11.0.2.tar.gz
+        sha256: 33e2e26bdd85a0112ec15400c8cbffea70d0f9c3407491f672a2fad47915e2de
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10
+        url: https://pub.dev/api/archives/leak_tracker_flutter_testing-3.0.10.tar.gz
+        sha256: 1dbc140bb5a23c75ea9c4811222756104fbcd1a27173f0c34ca01e16bea473c1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2
+        url: https://pub.dev/api/archives/leak_tracker_testing-3.0.2.tar.gz
+        sha256: 8d5a2d49f4a66b49744b23b018848400d23e54caf9463f4eb20df3eb8acb2eb1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/lints-6.1.0
+        url: https://pub.dev/api/archives/lints-6.1.0.tar.gz
+        sha256: 12f842a479589fea194fe5c5a3095abc7be0c1f2ddfa9a0e76aed1dbd26a87df
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/logging-1.3.0
+        url: https://pub.dev/api/archives/logging-1.3.0.tar.gz
+        sha256: c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/lottie-3.5.1
+        url: https://pub.dev/api/archives/lottie-3.5.1.tar.gz
+        sha256: 58dda9eee3f1b1fb9d490b0161635cffe93022b3b8ca0687e3df33a53620ead2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/matcher-0.12.20
+        url: https://pub.dev/api/archives/matcher-0.12.20.tar.gz
+        sha256: 31bd099b47c10cd1aeb55146a2d46ce0277630ecef3f7dae54ad7873f36696cd
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/material_color_utilities-0.13.0
+        url: https://pub.dev/api/archives/material_color_utilities-0.13.0.tar.gz
+        sha256: 9c337007e82b1889149c82ed242ed1cb24a66044e30979c44912381e9be4c48b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit-1.2.6
+        url: https://pub.dev/api/archives/media_kit-1.2.6.tar.gz
+        sha256: ae9e79597500c7ad6083a3c7b7b7544ddabfceacce7ae5c9709b0ec16a5d6643
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit_libs_android_video-1.3.8
+        url: https://pub.dev/api/archives/media_kit_libs_android_video-1.3.8.tar.gz
+        sha256: 3f6274e5ab2de512c286a25c327288601ee445ed8ac319e0ef0b66148bd8f76c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit_libs_ios_video-1.1.4
+        url: https://pub.dev/api/archives/media_kit_libs_ios_video-1.1.4.tar.gz
+        sha256: b5382994eb37a4564c368386c154ad70ba0cc78dacdd3fb0cd9f30db6d837991
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit_libs_linux-1.2.1
+        url: https://pub.dev/api/archives/media_kit_libs_linux-1.2.1.tar.gz
+        sha256: 2b473399a49ec94452c4d4ae51cfc0f6585074398d74216092bf3d54aac37ecf
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit_libs_macos_video-1.1.4
+        url: https://pub.dev/api/archives/media_kit_libs_macos_video-1.1.4.tar.gz
+        sha256: f26aa1452b665df288e360393758f84b911f70ffb3878032e1aabba23aa1032d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/media_kit_libs_video-1.0.7
+        url: https://pub.dev/api/archives/media_kit_libs_video-1.0.7.tar.gz
+        sha256: 2b235b5dac79c6020e01eef5022c6cc85fedc0df1738aadc6ea489daa12a92a9
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/meta-1.19.0
+        url: https://pub.dev/api/archives/meta-1.19.0.tar.gz
+        sha256: 307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/mime-2.0.0
+        url: https://pub.dev/api/archives/mime-2.0.0.tar.gz
+        sha256: 41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/nested-1.0.0
+        url: https://pub.dev/api/archives/nested-1.0.0.tar.gz
+        sha256: 03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/objective_c-9.6.0
+        url: https://pub.dev/api/archives/objective_c-9.6.0.tar.gz
+        sha256: ad56fd53a78ff6b1472fa59ff2a4e8b8ccabafc586fc263a1dfad0b99b5553e3
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/octo_image-2.1.0
+        url: https://pub.dev/api/archives/octo_image-2.1.0.tar.gz
+        sha256: 34faa6639a78c7e3cbe79be6f9f96535867e879748ade7d17c9b1ae7536293bd
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/open_filex-4.7.0
+        url: https://pub.dev/api/archives/open_filex-4.7.0.tar.gz
+        sha256: 9976da61b6a72302cf3b1efbce259200cd40232643a467aac7370addf94d6900
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/package_config-2.2.0
+        url: https://pub.dev/api/archives/package_config-2.2.0.tar.gz
+        sha256: f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/package_info_plus-9.0.1
+        url: https://pub.dev/api/archives/package_info_plus-9.0.1.tar.gz
+        sha256: 468c26b4254ab01979fa5e4a98cb343ea3631b9acee6f21028997419a80e1a20
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1
+        url: https://pub.dev/api/archives/package_info_plus_platform_interface-3.2.1.tar.gz
+        sha256: 202a487f08836a592a6bd4f901ac69b3a8f146af552bbd14407b6b41e1c3f086
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path-1.9.1
+        url: https://pub.dev/api/archives/path-1.9.1.tar.gz
+        sha256: 75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_parsing-1.1.0
+        url: https://pub.dev/api/archives/path_parsing-1.1.0.tar.gz
+        sha256: 883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider-2.1.6
+        url: https://pub.dev/api/archives/path_provider-2.1.6.tar.gz
+        sha256: a7f4874f987173da295a61c181b8ee71dab59b332a486b391babf26a1b884825
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider_android-2.3.1
+        url: https://pub.dev/api/archives/path_provider_android-2.3.1.tar.gz
+        sha256: 69cbd515a62b94d32a7944f086b2f82b4ac40a1d45bebfc00813a430ab2dabcd
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0
+        url: https://pub.dev/api/archives/path_provider_foundation-2.6.0.tar.gz
+        sha256: 2a376b7d6392d80cd3705782d2caa734ca4727776db0b6ec36ef3f1855197699
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider_linux-2.2.2
+        url: https://pub.dev/api/archives/path_provider_linux-2.2.2.tar.gz
+        sha256: 58c2005f147315b11e9b4a7bc889cd5203e250cba8e3f012dae259b4972b5c16
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.3
+        url: https://pub.dev/api/archives/path_provider_platform_interface-2.1.3.tar.gz
+        sha256: 484838772624c3a4b94f1e44a3e19897fee738f2d5c4ce448443b0417f7c9dda
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/path_provider_windows-2.3.0
+        url: https://pub.dev/api/archives/path_provider_windows-2.3.0.tar.gz
+        sha256: bd6f00dbd873bfb70d0761682da2b3a2c2fccc2b9e84c495821639601d81afe7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/petitparser-7.0.2
+        url: https://pub.dev/api/archives/petitparser-7.0.2.tar.gz
+        sha256: 91bd59303e9f769f108f8df05e371341b15d59e995e6806aefab827b58336675
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/platform-3.1.6
+        url: https://pub.dev/api/archives/platform-3.1.6.tar.gz
+        sha256: 5d6b1b0036a5f331ebc77c850ebc8506cbc1e9416c27e59b439f917a902a4984
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8
+        url: https://pub.dev/api/archives/plugin_platform_interface-2.1.8.tar.gz
+        sha256: 4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/pool-1.5.2
+        url: https://pub.dev/api/archives/pool-1.5.2.tar.gz
+        sha256: 978783255c543aa3586a1b3c21f6e9d720eb315376a915872c61ef8b5c20177d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/posix-6.5.2
+        url: https://pub.dev/api/archives/posix-6.5.2.tar.gz
+        sha256: bc1bad54ad2b735816e31f8d4600cfde6c7839975085ddfbca48b6c9f7c4044e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/provider-6.1.5+1
+        url: https://pub.dev/api/archives/provider-6.1.5%2B1.tar.gz
+        sha256: 4e82183fa20e5ca25703ead7e05de9e4cceed1fbd1eadc1ac3cb6f565a09f272
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/pub_semver-2.2.0
+        url: https://pub.dev/api/archives/pub_semver-2.2.0.tar.gz
+        sha256: 5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/pubspec_parse-1.5.0
+        url: https://pub.dev/api/archives/pubspec_parse-1.5.0.tar.gz
+        sha256: 0560ba233314abbed0a48a2956f7f022cce7c3e1e73df540277da7544cad4082
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/recase-4.1.0
+        url: https://pub.dev/api/archives/recase-4.1.0.tar.gz
+        sha256: e4eb4ec2dcdee52dcf99cb4ceabaffc631d7424ee55e56f280bc039737f89213
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/receive_sharing_intent-1.8.1
+        url: https://pub.dev/api/archives/receive_sharing_intent-1.8.1.tar.gz
+        sha256: ec76056e4d258ad708e76d85591d933678625318e411564dcb9059048ca3a593
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/record_use-1.1.1
+        url: https://pub.dev/api/archives/record_use-1.1.1.tar.gz
+        sha256: 1cb8564af8d43b464294411db9217f5ec04891c6f22ee2c32d73ae05e88a6bd2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/rich_readmore-1.1.1
+        url: https://pub.dev/api/archives/rich_readmore-1.1.1.tar.gz
+        sha256: 1c8a97f4a8268737f4e82beebd6137c6a0855cab72c4b3dd1133014e63536b62
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/rxdart-0.28.0
+        url: https://pub.dev/api/archives/rxdart-0.28.0.tar.gz
+        sha256: 5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/safe_local_storage-2.0.6
+        url: https://pub.dev/api/archives/safe_local_storage-2.0.6.tar.gz
+        sha256: 494b982d5edb71030650ea463d939670e91b232b588323dc75229d2c5f23e7b7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness-2.1.11
+        url: https://pub.dev/api/archives/screen_brightness-2.1.11.tar.gz
+        sha256: e0edf92c08889e8f493cde291e7c687db2b4a1471f2371c074070b75d7c7d79b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_android-2.1.6
+        url: https://pub.dev/api/archives/screen_brightness_android-2.1.6.tar.gz
+        sha256: 2008ad8e9527cc968f7a4de1ec58b476d495b3c612a149dbd6550c4f046da147
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_ios-2.1.4
+        url: https://pub.dev/api/archives/screen_brightness_ios-2.1.4.tar.gz
+        sha256: 352d355e8523a186ba1e494b74218e5ca96e51975a0630b8ed89fbb7ff609762
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_macos-2.1.4
+        url: https://pub.dev/api/archives/screen_brightness_macos-2.1.4.tar.gz
+        sha256: b0957237b842d846a84363b69f229b339a8f91faced55041e245b2ebff7b0142
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_ohos-2.1.4
+        url: https://pub.dev/api/archives/screen_brightness_ohos-2.1.4.tar.gz
+        sha256: 569a2c97909a50894b81487619eb7654f5358443a5af05f840c19261f49c0940
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_platform_interface-2.1.2
+        url: https://pub.dev/api/archives/screen_brightness_platform_interface-2.1.2.tar.gz
+        sha256: 2de60c0ba569b898950029cc1f7e9dd72bda44a22beb5054aac331cb6fce2ff2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/screen_brightness_windows-2.1.2
+        url: https://pub.dev/api/archives/screen_brightness_windows-2.1.2.tar.gz
+        sha256: 368b9c822e1671de81616e48150006e39eff2a434957e47ee638b09a32b2297c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/share_plus-12.0.2
+        url: https://pub.dev/api/archives/share_plus-12.0.2.tar.gz
+        sha256: 223873d106614442ea6f20db5a038685cc5b32a2fba81cdecaefbbae0523f7fa
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/share_plus_platform_interface-6.1.0
+        url: https://pub.dev/api/archives/share_plus_platform_interface-6.1.0.tar.gz
+        sha256: 88023e53a13429bd65d8e85e11a9b484f49d4c190abbd96c7932b74d6927cc9a
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/shelf-1.4.2
+        url: https://pub.dev/api/archives/shelf-1.4.2.tar.gz
+        sha256: e7dd780a7ffb623c57850b33f43309312fc863fb6aa3d276a754bb299839ef12
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/shelf_web_socket-3.0.0
+        url: https://pub.dev/api/archives/shelf_web_socket-3.0.0.tar.gz
+        sha256: 3632775c8e90d6c9712f883e633716432a27758216dfb61bd86a8321c0580925
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/shimmer-3.0.0
+        url: https://pub.dev/api/archives/shimmer-3.0.0.tar.gz
+        sha256: 5f88c883a22e9f9f299e5ba0e4f7e6054857224976a5d9f839d4ebdc94a14ac9
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/simple_html_css-5.0.0
+        url: https://pub.dev/api/archives/simple_html_css-5.0.0.tar.gz
+        sha256: 93bc59c0565e943abf6674e932f3f8b77bf87290a4f6f3f364c05fad26feb9d7
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/simple_sparse_list-0.1.4
+        url: https://pub.dev/api/archives/simple_sparse_list-0.1.4.tar.gz
+        sha256: aa648fd240fa39b49dcd11c19c266990006006de6699a412de485695910fbc1f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/source_gen-2.0.0
+        url: https://pub.dev/api/archives/source_gen-2.0.0.tar.gz
+        sha256: 35c8150ece9e8c8d263337a265153c3329667640850b9304861faea59fc98f6b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/source_helper-1.3.7
+        url: https://pub.dev/api/archives/source_helper-1.3.7.tar.gz
+        sha256: a447acb083d3a5ef17f983dd36201aeea33fedadb3228fa831f2f0c92f0f3aca
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/source_span-1.10.2
+        url: https://pub.dev/api/archives/source_span-1.10.2.tar.gz
+        sha256: 56a02f1f4cd1a2d96303c0144c93bd6d909eea6bee6bf5a0e0b685edbd4c47ab
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqflite-2.4.3
+        url: https://pub.dev/api/archives/sqflite-2.4.3.tar.gz
+        sha256: 58a799e6ac17dd32fbab93813d39ed835a75ccc0f8f85b8955fe318c6712b082
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqflite_android-2.4.3
+        url: https://pub.dev/api/archives/sqflite_android-2.4.3.tar.gz
+        sha256: d0548f9d7422a2dae99ec6f8b0a3074463b132d216fa5ba0d230eeefc901983b
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqflite_common-2.5.11
+        url: https://pub.dev/api/archives/sqflite_common-2.5.11.tar.gz
+        sha256: 5bf6a55c166e73bf651ba7ec3ed486e577620e3dc8f3a9c6a258a8031b624590
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1
+        url: https://pub.dev/api/archives/sqflite_darwin-2.4.3%2B1.tar.gz
+        sha256: c86ca18b8f666bbf903924687fe21cc16fc385d086005067e26619ca530bef9f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.1
+        url: https://pub.dev/api/archives/sqflite_platform_interface-2.4.1.tar.gz
+        sha256: f84939f84350d92d04416f8bc4dc52d3896aec7716cc9e80cf0146342139dc50
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqlite3-2.9.4
+        url: https://pub.dev/api/archives/sqlite3-2.9.4.tar.gz
+        sha256: 3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqlite3_flutter_libs-0.5.42
+        url: https://pub.dev/api/archives/sqlite3_flutter_libs-0.5.42.tar.gz
+        sha256: eeb9e3a45207649076b808f8a5a74d68770d0b7f26ccef6d5f43106eee5375ad
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/sqlparser-0.41.2
+        url: https://pub.dev/api/archives/sqlparser-0.41.2.tar.gz
+        sha256: 57090342af1ce32bb499aa641f4ecdd2d6231b9403cea537ac059e803cc20d67
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/stack_trace-1.12.1
+        url: https://pub.dev/api/archives/stack_trace-1.12.1.tar.gz
+        sha256: 8b27215b45d22309b5cddda1aa2b19bdfec9df0e765f2de506401c071d38d1b1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/stream_channel-2.1.4
+        url: https://pub.dev/api/archives/stream_channel-2.1.4.tar.gz
+        sha256: 969e04c80b8bcdf826f8f16579c7b14d780458bd97f56d107d3950fdbeef059d
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/stream_transform-2.1.1
+        url: https://pub.dev/api/archives/stream_transform-2.1.1.tar.gz
+        sha256: ad47125e588cfd37a9a7f86c7d6356dde8dfe89d071d293f80ca9e9273a33871
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/string_scanner-1.4.1
+        url: https://pub.dev/api/archives/string_scanner-1.4.1.tar.gz
+        sha256: 921cd31725b72fe181906c6a94d987c78e3b98c2e205b397ea399d4054872b43
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/synchronized-3.4.1+2
+        url: https://pub.dev/api/archives/synchronized-3.4.1%2B2.tar.gz
+        sha256: 3a7b5d17422dd0f8d5c6c14feaa5a1c65638b9455f871a96f08437562c046931
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/term_glyph-1.2.2
+        url: https://pub.dev/api/archives/term_glyph-1.2.2.tar.gz
+        sha256: 7f554798625ea768a7518313e58f83891c7f5024f88e46e7182a4558850a4b8e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/test_api-0.7.12
+        url: https://pub.dev/api/archives/test_api-0.7.12.tar.gz
+        sha256: 2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/timezone-0.10.1
+        url: https://pub.dev/api/archives/timezone-0.10.1.tar.gz
+        sha256: dd14a3b83cfd7cb19e7888f1cbc20f258b8d71b54c06f79ac585f14093a287d1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/timing-1.0.2
+        url: https://pub.dev/api/archives/timing-1.0.2.tar.gz
+        sha256: 62ee18aca144e4a9f29d212f5a4c6a053be252b895ab14b5821996cff4ed90fe
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/typed_data-1.4.0
+        url: https://pub.dev/api/archives/typed_data-1.4.0.tar.gz
+        sha256: f9049c039ebfeb4cf7a7104a675823cd72dba8297f264b6637062516699fa006
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/unicode-1.1.9
+        url: https://pub.dev/api/archives/unicode-1.1.9.tar.gz
+        sha256: a6f7bcfc8ea1d5ce1f6c0b1c39117a9919f4953edd9fd7a64090a9796c499b57
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/universal_platform-1.1.0
+        url: https://pub.dev/api/archives/universal_platform-1.1.0.tar.gz
+        sha256: 64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/uri_parser-3.0.2
+        url: https://pub.dev/api/archives/uri_parser-3.0.2.tar.gz
+        sha256: 051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher-6.3.2
+        url: https://pub.dev/api/archives/url_launcher-6.3.2.tar.gz
+        sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_android-6.3.32
+        url: https://pub.dev/api/archives/url_launcher_android-6.3.32.tar.gz
+        sha256: b413d49b73867ac08dd2f9890efd3cc11f2a0e577618d50843440a1fb3776c32
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_ios-6.4.1
+        url: https://pub.dev/api/archives/url_launcher_ios-6.4.1.tar.gz
+        sha256: 580fe5dfb51671ae38191d316e027f6b76272b026370708c2d898799750a02b0
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_linux-3.2.2
+        url: https://pub.dev/api/archives/url_launcher_linux-3.2.2.tar.gz
+        sha256: d5e14138b3bc193a0f63c10a53c94b91d399df0512b1f29b94a043db7482384a
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5
+        url: https://pub.dev/api/archives/url_launcher_macos-3.2.5.tar.gz
+        sha256: 368adf46f71ad3c21b8f06614adb38346f193f3a59ba8fe9a2fd74133070ba18
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_platform_interface-2.3.2
+        url: https://pub.dev/api/archives/url_launcher_platform_interface-2.3.2.tar.gz
+        sha256: 552f8a1e663569be95a8190206a38187b531910283c3e982193e4f2733f01029
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_web-2.4.3
+        url: https://pub.dev/api/archives/url_launcher_web-2.4.3.tar.gz
+        sha256: 85c81589622fbc87c1c683aaea164d3604a7777495a79d91e39ffcdec39ddb34
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/url_launcher_windows-3.1.5
+        url: https://pub.dev/api/archives/url_launcher_windows-3.1.5.tar.gz
+        sha256: 712c70ab1b99744ff066053cbe3e80c73332b38d46e5e945c98689b2e66fc15f
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/uuid-4.6.0
+        url: https://pub.dev/api/archives/uuid-4.6.0.tar.gz
+        sha256: 9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/vector_graphics-1.2.3
+        url: https://pub.dev/api/archives/vector_graphics-1.2.3.tar.gz
+        sha256: 9d0e3b9cb16542ad660daee871e726a10d13a93b7b5391677c3160e8f5e83935
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/vector_graphics_codec-1.1.13
+        url: https://pub.dev/api/archives/vector_graphics_codec-1.1.13.tar.gz
+        sha256: 99fd9fbd34d9f9a32efd7b6a6aae14125d8237b10403b422a6a6dfeac2806146
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/vector_graphics_compiler-1.3.0
+        url: https://pub.dev/api/archives/vector_graphics_compiler-1.3.0.tar.gz
+        sha256: 4dca4feb77dc3ec7f6e27e49c53241eb8217f55e4f9b12599a27f8903bca5682
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/vector_math-2.4.2
+        url: https://pub.dev/api/archives/vector_math-2.4.2.tar.gz
+        sha256: f36f9f3be64c6198714492bb455c11056e33e2f85d9a0b676a48301e44fdcf47
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/vm_service-15.3.0
+        url: https://pub.dev/api/archives/vm_service-15.3.0.tar.gz
+        sha256: 5f37239c4851efcef929cea7824e76df7f2f0970aef85d66bbc430afa40e72f0
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/wakelock_plus-1.5.2
+        url: https://pub.dev/api/archives/wakelock_plus-1.5.2.tar.gz
+        sha256: ddf3db70eaa10c37558ff817519b85d527dbd21034fd5d8e1c2e85f31588f1c1
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/wakelock_plus_platform_interface-1.6.0
+        url: https://pub.dev/api/archives/wakelock_plus_platform_interface-1.6.0.tar.gz
+        sha256: 0618d1799f0b28bcf98255b4ee8313e6fc4d38589dc4ee5fe5840d57d1aff6da
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/watcher-1.2.1
+        url: https://pub.dev/api/archives/watcher-1.2.1.tar.gz
+        sha256: 1398c9f081a753f9226febe8900fce8f7d0a67163334e1c94a2438339d79d635
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/web-1.1.1
+        url: https://pub.dev/api/archives/web-1.1.1.tar.gz
+        sha256: 868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/web_socket-1.0.1
+        url: https://pub.dev/api/archives/web_socket-1.0.1.tar.gz
+        sha256: 34d64019aa8e36bf9842ac014bb5d2f5586ca73df5e4d9bf5c936975cae6982c
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/web_socket_channel-3.0.3
+        url: https://pub.dev/api/archives/web_socket_channel-3.0.3.tar.gz
+        sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/win32-5.15.0
+        url: https://pub.dev/api/archives/win32-5.15.0.tar.gz
+        sha256: d7cb55e04cd34096cd3a79b3330245f54cb96a370a1c27adb3c84b917de8b08e
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/xdg_directories-1.1.0
+        url: https://pub.dev/api/archives/xdg_directories-1.1.0.tar.gz
+        sha256: 7a3f37b05d989967cdddcbb571f1ea834867ae2faa29725fd085180e0883aa15
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/xml-6.6.1
+        url: https://pub.dev/api/archives/xml-6.6.1.tar.gz
+        sha256: 971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/yaml-3.1.3
+        url: https://pub.dev/api/archives/yaml-3.1.3.tar.gz
+        sha256: b9da305ac7c39faa3f030eccd175340f968459dae4af175130b3fc47e40d76ce
+      - type: archive
+        strip-components: 0
+        dest: pub-cache/hosted/pub.dev/youtube_explode_dart-3.1.0
+        url: https://pub.dev/api/archives/youtube_explode_dart-3.1.0.tar.gz
+        sha256: 10134a53989b2f3dc576121735aec8fc6d88784956f4a2ad1a2525b006373a76

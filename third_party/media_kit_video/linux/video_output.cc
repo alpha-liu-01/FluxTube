@@ -33,6 +33,8 @@ struct _VideoOutput {
   FlTextureRegistrar* texture_registrar;
   gboolean destroyed;
   gboolean flutter_gl_bound;
+  gint texture_epoch;
+  gint rebind_wait;
 };
 
 G_DEFINE_TYPE(VideoOutput, video_output, G_TYPE_OBJECT)
@@ -84,6 +86,8 @@ static void video_output_init(VideoOutput* self) {
   self->texture_registrar = NULL;
   self->destroyed = FALSE;
   self->flutter_gl_bound = FALSE;
+  self->texture_epoch = 0;
+  self->rebind_wait = 0;
   g_mutex_init(&self->mutex);
 }
 
@@ -284,6 +288,11 @@ gboolean video_output_ensure_render_context(VideoOutput* self) {
         if (output->destroyed || output->texture_gl == NULL) {
           return;
         }
+        // The first frame after the track is selected again must be imported
+        // under a new GL name. Impeller keeps the name from the empty draw.
+        if (g_atomic_int_compare_and_exchange(&output->rebind_wait, 1, 0)) {
+          g_atomic_int_inc(&output->texture_epoch);
+        }
         fl_texture_registrar_mark_texture_frame_available(
             output->texture_registrar, FL_TEXTURE(output->texture_gl));
       },
@@ -292,29 +301,44 @@ gboolean video_output_ensure_render_context(VideoOutput* self) {
       "media_kit: VideoOutput: mpv render context created on Flutter GL "
       "context\n");
   self->flutter_gl_bound = TRUE;
-  // mpv's video output for the playing file was created against the GDK
-  // render context freed above, and it does not attach to the new one. It
-  // draws nothing until mpv builds a new output, which is why a quality
-  // change or the next video showed the picture. Reselect the video track so
-  // mpv builds that output now. populate runs on Flutter's raster thread and
-  // must not wait on mpv's core, so the synchronous calls go to the GTK main
-  // thread. mpv_set_property_async would post replies media_kit never asked
-  // for, and it logs each one as an unregistered ID.
+  // Freeing the GDK render context calls kill_video_async() in libmpv 0.35.
+  // That deselects the video track and leaves audio running, which is why the
+  // first file has sound and a black picture until the next open() selects
+  // video again. vid is already "auto", so set it to "no" and back. The next
+  // frame then allocates a new GL texture. Impeller keeps the name from the
+  // empty draw that happened before this. Runs on the GTK thread because
+  // populate is on the raster thread and must not wait on mpv.
   g_idle_add(
       [](gpointer data) -> gboolean {
         VideoOutput* output = (VideoOutput*)data;
         if (!output->destroyed) {
-          mpv_set_property_string(output->handle, "vid", "no");
-          mpv_set_property_string(output->handle, "vid", "auto");
+          int disabled = mpv_set_property_string(output->handle, "vid", "no");
+          int restored = mpv_set_property_string(output->handle, "vid", "auto");
+          // Arm after the property changes. The next frame callback, not this
+          // empty draw, allocates the texture Impeller will keep.
+          g_atomic_int_set(&output->rebind_wait, 1);
           g_print(
-              "media_kit: VideoOutput: video track reselected for new "
-              "context\n");
+              "media_kit: VideoOutput: video track reselected after context "
+              "replace (%d, %d)\n",
+              disabled, restored);
         }
         g_object_unref(output);
         return G_SOURCE_REMOVE;
       },
       g_object_ref(self));
   return TRUE;
+}
+
+gint video_output_texture_epoch(VideoOutput* self) {
+  return g_atomic_int_get(&self->texture_epoch);
+}
+
+void video_output_request_frame(VideoOutput* self) {
+  if (self->destroyed || self->texture_gl == NULL) {
+    return;
+  }
+  fl_texture_registrar_mark_texture_frame_available(
+      self->texture_registrar, FL_TEXTURE(self->texture_gl));
 }
 
 void video_output_set_texture_update_callback(

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>lol.alphaliu01.gastube</id>
+  <name>GasTube</name>
+  <summary>Ad-free YouTube client</summary>
+  <developer id="lol.alphaliu01">
+    <name>alpha-liu-01</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      GasTube is a desktop YouTube client for watching videos, reading comments,
+      and subscribing to channels without ads. It is a fork of FluxTube and is
+      not an official YouTube or FluxTube release.
+    </p>
+    <p>
+      Video pages use NewPipe Extractor. On a wide window the library is a grid
+      and the watch page splits the player from comments and related videos.
+    </p>
+  </description>
+  <launchable type="desktop-id">lol.alphaliu01.gastube.desktop</launchable>
+  <url type="homepage">https://github.com/alpha-liu-01/GasTube</url>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">mild</content_attribute>
+  </content_rating>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/alpha-liu-01/GasTube/main/doc/home.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.9.3" date="2026-09-26"/>
+  </releases>
+</component>

@@ -1,0 +1,4 @@
+#!/bin/sh
+# The Freedesktop 26.08 SDK ships GCC, not Clang. Flutter's Linux build
+# looks up clang and clang++ on PATH.
+exec gcc "$@"

@@ -55,6 +55,8 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   final ScrollController _watchScroll =
       ScrollController(keepScrollOffset: false);
   bool _slidePopped = false;
+  // Captured while the element is active. dispose() cannot look up ancestors.
+  WatchBloc? _watchBloc;
   void _enterAppPipAndPop() {
     GlobalPlayerController().enterPipMode();
     BlocProvider.of<WatchBloc>(context).add(WatchEvent.togglePip(value: true));
@@ -83,8 +85,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   }
 
   void _evictRelatedThumbnails() {
-    final related =
-        context.read<WatchBloc>().state.newPipeWatchResp.relatedStreams;
+    final related = _watchBloc?.state.newPipeWatchResp.relatedStreams;
     if (related == null) return;
     final cache = PaintingBinding.instance.imageCache;
     for (final stream in related) {
@@ -148,6 +149,7 @@ class _NewPipeScreenWatchState extends State<NewPipeScreenWatch>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _watchBloc = context.read<WatchBloc>();
     // Handle when this watch screen becomes visible again
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

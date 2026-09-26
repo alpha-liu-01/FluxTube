@@ -13,7 +13,6 @@ GasTube is not an official FluxTube release.
   <a href="https://github.com/alpha-liu-01/GasTube/releases" alt="GasTube downloads"><img src="https://img.shields.io/github/downloads/alpha-liu-01/GasTube/total.svg?label=GasTube+Downloads" ></a>
 </p>
 
-The release and download badges above are for FluxTube, the upstream project. They are not GasTube downloads.
 
 ## Features
 
@@ -49,8 +48,8 @@ Some features are only available when using the NewPipe Extractor service.
 <div align="center">
   <img src="doc/home.png" alt="GasTube Home" width="22%">
   <img src="doc/watch.png" alt="GasTube Watch" width="22%">
-  <img src="doc/trending.png" alt="GasTube Trending" width="22%">
-  <img src="doc/settings.png" alt="GasTube settings" width="22%">
+  <img src="doc/personal.png" alt="GasTube Trending" width="22%">
+  <img src="doc/history.png" alt="GasTube settings" width="22%">
 </div>
 
 ## Download
